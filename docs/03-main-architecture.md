@@ -11,12 +11,14 @@ The product is complex enough to need clear module boundaries, but not mature en
 ### Frontend
 
 - React with TypeScript
-- Vite or Next.js frontend shell
+- Vite frontend shell
 - TanStack Query for server state
 - Zustand for small client-side UI state
 - React Flow for workflow and live fleet canvases
 - Tailwind CSS with Radix UI primitives for accessible controls
 - Monaco Editor or CodeMirror for JSON/config editing
+- Sliced workspace app shell: icon rail, entity column, main workspace, and persistent Platform Chat panel
+- Frontend UI rules are defined in [Frontend UI Guidelines](./07-frontend-ui-guidelines.md)
 
 ### Backend
 
@@ -102,6 +104,22 @@ R0 modules:
 8. Observability and Governance
 
 Each module owns its own use cases and tables. Cross-module access should go through service interfaces, not direct table access from random code.
+
+## Frontend Shell Boundary
+
+The frontend shell owns navigation and workspace composition:
+
+- top bar
+- far-left icon rail
+- entity browser column
+- main workspace
+- right-side Platform Chat panel
+
+Product modules own their entity lists, detail workspaces, creation forms, and
+action surfaces inside that shell. Entity creation must use the workspace
+creation pattern, not modal-first flows. The Command Center canvas is the only
+primary canvas surface in R0; historical lists, artifacts, and event streams
+belong in their own module screens or filtered lists.
 
 ## Data Ownership
 

@@ -6,6 +6,10 @@ The Platform Chat is a built-in ADLC-managed system agent for asking about and o
 
 It is not just another agent chat. It is the conversational interface to the product's own state.
 
+In the UI, Platform Chat is a persistent right-side panel. It can be expanded,
+collapsed, or hidden by the user. When expanded, it resizes the main workspace
+instead of overlaying it.
+
 ## User Jobs
 
 - Ask what is running now.
@@ -16,6 +20,7 @@ It is not just another agent chat. It is the conversational interface to the pro
 - Resolve pending workflow actions when it has enough confirmed information.
 - Help create and configure agents, workflows, capabilities, and workspace settings step by step.
 - Navigate to relevant sessions, agents, traces, and artifacts.
+- Preserve current screen/entity context while answering.
 
 ## Example Prompts
 
@@ -100,3 +105,4 @@ These are application tools, not necessarily OpenAI Agents API tools.
 - Log chat-initiated actions in audit history.
 - Create agents as drafts only; publishing requires separate confirmation.
 - Do not support unrestricted natural-language full workflow generation in R0.
+- Follow [Frontend UI Guidelines](../07-frontend-ui-guidelines.md) for panel sizing, context strip, and action button behavior.

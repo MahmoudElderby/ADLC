@@ -2,7 +2,7 @@
 
 Date: 2026-09-17
 
-This pack defines the business thesis, product scope, system architecture, module plans, and OpenAI Agents API integration plan for an AI SDLC Command Center.
+This pack defines the business thesis, product scope, system architecture, frontend UI rules, module plans, and OpenAI Agents API integration plan for an AI SDLC Command Center.
 
 ## Recommended Reading Order
 
@@ -12,8 +12,9 @@ This pack defines the business thesis, product scope, system architecture, modul
 4. [OpenAI integration](./04-openai-integration.md)
 5. [Roadmap](./05-roadmap.md)
 6. [Data model and API boundaries](./06-data-model-and-api-boundaries.md)
-7. [Stack ADR](./adr/0001-stack-and-architecture-style.md)
-8. Module plans:
+7. [Frontend UI guidelines](./07-frontend-ui-guidelines.md)
+8. [Stack ADR](./adr/0001-stack-and-architecture-style.md)
+9. Module plans:
    - [Command Center Dashboard](./modules/command-center-dashboard.md)
    - [Agent Registry](./modules/agent-registry.md)
    - [Capability Registry](./modules/capability-registry.md)

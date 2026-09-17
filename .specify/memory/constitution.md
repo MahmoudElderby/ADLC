@@ -116,6 +116,11 @@ unless the constitution is amended first. Product specs MUST separate user-facin
 behavior from implementation details, and MUST make approval, audit, artifact,
 and workflow-state behavior explicit when affected.
 
+Frontend-facing specifications MUST comply with `docs/07-frontend-ui-guidelines.md`
+unless the UI guideline document is explicitly amended. App screens MUST preserve
+the sliced workspace shell, operational density, status semantics, and persistent
+Platform Chat behavior defined there.
+
 Implementation planning MUST keep the modular-monolith direction from the project
 docs unless superseded by an accepted ADR. Module boundaries MUST remain explicit:
 Agent Registry, Capability Registry, Workflow Orchestrator, Session Runner,

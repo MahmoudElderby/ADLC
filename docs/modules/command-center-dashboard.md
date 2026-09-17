@@ -17,8 +17,7 @@ The Command Center Dashboard is the home screen. It tells users what has been co
 1. Inventory metrics band
 2. Live Agent Fleet Canvas
 3. Attention panel
-4. Activity stream
-5. Platform chat dock
+4. Platform chat dock
 
 ## Key Metrics
 
@@ -26,7 +25,6 @@ The Command Center Dashboard is the home screen. It tells users what has been co
 - Workflows configured
 - Skills registered
 - MCP servers connected
-- Workspace environment health
 - Active sessions
 - Running subagents
 - Pending approvals
@@ -38,6 +36,11 @@ The Command Center Dashboard is the home screen. It tells users what has been co
 ## Live Agent Fleet Canvas
 
 Represent active sessions as mission clusters.
+
+The canvas focuses on active running main agents, subagents, and approval-needed
+states. Do not show idle agents, completed sessions, historical lists, recent
+artifact lists, or recent event streams on the main Command Center canvas. Those
+belong in their own screens or filtered lists, with metric tiles linking to them.
 
 Visual model:
 
@@ -87,3 +90,4 @@ This canvas should be operational, not decorative. Clicking any entity opens the
 - Use query projections from stored normalized events.
 - Do not calculate dashboard state by replaying all raw events on every page load.
 - Keep animations subtle and optional.
+- Follow [Frontend UI Guidelines](../07-frontend-ui-guidelines.md) for shell layout, status colors, and canvas motion rules.
