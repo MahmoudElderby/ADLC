@@ -13,8 +13,9 @@ This pack defines the business thesis, product scope, system architecture, front
 5. [Roadmap](./05-roadmap.md)
 6. [Data model and API boundaries](./06-data-model-and-api-boundaries.md)
 7. [Frontend UI guidelines](./07-frontend-ui-guidelines.md)
-8. [Stack ADR](./adr/0001-stack-and-architecture-style.md)
-9. Module plans:
+8. [Spec tracking](./08-spec-tracking.md)
+9. [Stack ADR](./adr/0001-stack-and-architecture-style.md)
+10. Module plans:
    - [Command Center Dashboard](./modules/command-center-dashboard.md)
    - [Agent Registry](./modules/agent-registry.md)
    - [Capability Registry](./modules/capability-registry.md)
