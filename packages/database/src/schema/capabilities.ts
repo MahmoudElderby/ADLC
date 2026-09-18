@@ -1,4 +1,13 @@
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { validationStatus, workspaceSecrets, workspaces } from "./foundation.js";
 
 export const skills = pgTable(
@@ -46,7 +55,7 @@ export const mcpServers = pgTable(
     connectionOrigin: text("connection_origin").notNull().default("environment"),
     allowedToolsJson: jsonb("allowed_tools_json").notNull(),
     credentialSecretId: uuid("credential_secret_id").references(() => workspaceSecrets.id),
-    required: text("required").notNull().default("true"),
+    required: boolean("required").notNull().default(true),
     status: validationStatus("status").notNull().default("pending_validation"),
     validationSummary: text("validation_summary"),
     validatedAt: timestamp("validated_at", { withTimezone: true }),

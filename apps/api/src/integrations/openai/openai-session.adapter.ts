@@ -21,9 +21,9 @@ export type OpenAISessionResult = {
 export class OpenAISessionAdapter {
   async createSession(request: OpenAISessionRequest): Promise<OpenAISessionResult> {
     return {
-      sessionId: `openai_session_${request.agentId}`,
-      environmentId: `openai_environment_${request.agentId}`,
-      remoteUrl: `wss://session.openai.example.test/${request.agentId}`,
+      sessionId: `openai_session_${crypto.randomUUID()}`,
+      environmentId: `openai_environment_${crypto.randomUUID()}`,
+      remoteUrl: `wss://session.openai.example.test/${crypto.randomUUID()}`,
       responseRedacted: {
         sessionId: `openai_session_${request.agentId}`,
         environmentId: `openai_environment_${request.agentId}`,

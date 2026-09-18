@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 export type ArtifactProbeResult = {
@@ -21,11 +22,13 @@ export function probeMarkdownArtifact(
     return { status: "invalid_type", workspaceRelativePath: normalized };
   }
 
-  if (normalized.includes("missing")) {
+  if (!fs.existsSync(resolvedPath)) {
     return { status: "missing", workspaceRelativePath: normalized };
   }
 
-  if (normalized.includes("unreadable")) {
+  try {
+    fs.accessSync(resolvedPath, fs.constants.R_OK);
+  } catch {
     return { status: "unreadable", workspaceRelativePath: normalized };
   }
 

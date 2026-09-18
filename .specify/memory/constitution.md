@@ -1,5 +1,23 @@
 <!--
 Sync Impact Report
+Version change: 1.0.0 -> 1.1.0
+Rationale: Spec 001 reached a Phase 6 PASS verification while producing no
+operable product increment. Its acceptance evidence was satisfiable entirely
+against mocked APIs and in-memory stores, and its UI never implemented the
+mandated app shell. This amendment adds the missing delivery constraint so a
+spec cannot be accepted without a reviewable end-to-end increment.
+Added principles:
+- VI. Vertical Slice Delivery
+Modified sections:
+- Development and Specification Workflow (demo script and acceptance evidence rules)
+- Governance (version bump)
+Affected specs requiring review:
+- specs/001-r0-agent-fleet-skeleton: reclassified to Implementing; acceptance
+  deferred to specs 003, 004, and 009 per docs/09-product-gap-assessment.md
+Affected module plans and ADRs: none require wording changes
+Follow-up TODOs: None
+
+Sync Impact Report
 Version change: template -> 1.0.0
 Modified principles:
 - [PRINCIPLE_1_NAME] -> I. General Fleet Control Plane
@@ -71,6 +89,20 @@ store the effective redacted configuration snapshot needed to explain the run
 history, including workflow structure, agent settings, selected skills, MCP/tool
 configuration, approval modes, artifact references, and runtime options.
 
+### VI. Vertical Slice Delivery
+Every feature spec MUST deliver a user-visible increment, including its user
+interface surface, that a reviewer can operate in a running system. A spec MUST
+NOT be accepted on evidence produced solely against mocks, fakes, in-memory
+substitutes, or directly instantiated services standing in for the boundaries the
+spec claims to prove. Claims about persistence MUST be proven against the real
+database, claims about API behavior MUST be proven across the real HTTP boundary,
+and claims about user-facing behavior MUST be proven against the real API rather
+than intercepted requests. Backend-only or UI-only work is permitted only when a
+spec names it explicitly as enabling work, and that work MUST be consumed by a
+visible slice within the same release. Verification reports MUST disclose which
+boundaries were exercised with substitutes, and MUST NOT record a passing result
+for a requirement whose real boundary was never crossed.
+
 ## R0 Product Boundaries
 
 The Command Center MUST be an operational status surface. It shows active
@@ -116,6 +148,12 @@ unless the constitution is amended first. Product specs MUST separate user-facin
 behavior from implementation details, and MUST make approval, audit, artifact,
 and workflow-state behavior explicit when affected.
 
+Every feature directory MUST contain a `demo.md` that records the exact click
+path a reviewer follows to see the increment in a running system, the observable
+outcome at each step, and the setup required beforehand. The demo script is
+written during specification, not after implementation, and a spec is not
+accepted until a reviewer can follow it successfully.
+
 Frontend-facing specifications MUST comply with `docs/07-frontend-ui-guidelines.md`
 unless the UI guideline document is explicitly amended. App screens MUST preserve
 the sliced workspace shell, operational density, status semantics, and persistent
@@ -133,7 +171,9 @@ Tests for R0 features MUST cover the product contract being changed. Workflow,
 approval, system-agent, artifact, snapshot, and audit behavior require
 integration-level tests because they define cross-module trust boundaries. UI
 tests MUST verify that configuration and operational status remain distinct
-surfaces.
+surfaces. At least one test path per feature MUST run the browser against the
+real API and the real database so the golden path cannot pass while the assembled
+system is broken.
 
 ## Governance
 
@@ -154,4 +194,4 @@ compliance is required during specification review, implementation planning, tas
 breakdown, and code review. When in doubt, prefer the simpler R0 boundary and
 defer expansion until real workflow usage proves the need.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-18 | **Last Amended**: 2026-09-18
+**Version**: 1.1.0 | **Ratified**: 2026-09-18 | **Last Amended**: 2026-09-18

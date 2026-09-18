@@ -1,6 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import type { Artifact, Session } from "@adlc/contracts";
+import { artifacts } from "@adlc/database";
+import { and, eq } from "drizzle-orm";
+import { DATABASE, type Database } from "../../platform/database/database.module.js";
 import { RedactionService } from "../../platform/security/redaction.service.js";
+import { ConnectorCommandService } from "../workspace-environment/connector-command.service.js";
 
 export type ArtifactReportInput = {
   sourceEventId: string;
@@ -9,55 +13,67 @@ export type ArtifactReportInput = {
   metadata?: Record<string, unknown>;
 };
 
-type StoredArtifact = Artifact & {
-  workspaceId: string;
-  metadata: Record<string, unknown>;
-};
-
 @Injectable()
 export class ArtifactService {
-  private readonly artifacts = new Map<string, StoredArtifact[]>();
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly redactionService: RedactionService,
+    private readonly connectorCommandService: ConnectorCommandService,
+  ) {}
 
-  constructor(private readonly redactionService: RedactionService) {}
-
-  recordArtifactReport(session: Session, input: ArtifactReportInput): Artifact {
+  async recordArtifactReport(session: Session, input: ArtifactReportInput): Promise<Artifact> {
     const workspaceId = this.extractWorkspaceId(session);
-    const current = this.artifacts.get(session.id) ?? [];
-    const existing = current.find(
-      (artifact) => artifact.metadata.sourceEventId === input.sourceEventId,
-    );
+    const [existing] = await this.db
+      .select()
+      .from(artifacts)
+      .where(
+        and(eq(artifacts.sessionId, session.id), eq(artifacts.sourceEventId, input.sourceEventId)),
+      )
+      .limit(1);
     if (existing) {
-      return existing;
+      return this.toArtifact(existing);
     }
 
-    const status = this.validatePath(input.workspaceRelativePath);
-    const now = new Date().toISOString();
-    const artifact: StoredArtifact = {
-      id: crypto.randomUUID(),
-      workspaceId,
-      sessionId: session.id,
-      reportSequence: current.length + 1,
-      name: input.name,
-      type: "markdown",
-      workspaceRelativePath: input.workspaceRelativePath,
-      status,
-      producerAgentId: session.agentId,
-      reportedAt: now,
-      validatedAt: now,
-      metadata: this.redactionService.redact({
+    const workspace = session.snapshotSummary?.workspace;
+    const workspacePath =
+      typeof workspace === "object" && workspace && "workspacePath" in workspace
+        ? String(workspace.workspacePath)
+        : "/workspace/adlc";
+    const probe = await this.connectorCommandService.validateArtifact(
+      workspacePath,
+      input.workspaceRelativePath,
+    );
+    const current = await this.listSessionArtifacts(workspaceId, session.id);
+    const now = new Date();
+    const [row] = await this.db
+      .insert(artifacts)
+      .values({
+        workspaceId,
+        sessionId: session.id,
         sourceEventId: input.sourceEventId,
-        ...(input.metadata ?? {}),
-      }),
-    };
-
-    this.artifacts.set(session.id, [...current, artifact]);
-    return artifact;
+        reportSequence: current.length + 1,
+        name: input.name,
+        artifactType: "markdown",
+        workspaceRelativePath: probe.workspaceRelativePath,
+        status: probe.status,
+        producerAgentId: session.agentId,
+        metadataRedactedJson: this.redactionService.redact({
+          sourceEventId: input.sourceEventId,
+          ...(input.metadata ?? {}),
+        }),
+        reportedAt: now,
+        validatedAt: now,
+      })
+      .returning();
+    return this.toArtifact(row);
   }
 
-  listSessionArtifacts(workspaceId: string, sessionId: string): Artifact[] {
-    return (this.artifacts.get(sessionId) ?? []).filter(
-      (artifact) => artifact.workspaceId === workspaceId,
-    );
+  async listSessionArtifacts(workspaceId: string, sessionId: string): Promise<Artifact[]> {
+    const rows = await this.db
+      .select()
+      .from(artifacts)
+      .where(and(eq(artifacts.sessionId, sessionId), eq(artifacts.workspaceId, workspaceId)));
+    return rows.map((row) => this.toArtifact(row));
   }
 
   private extractWorkspaceId(session: Session): string {
@@ -65,24 +81,21 @@ export class ArtifactService {
     if (typeof workspace === "object" && workspace && "id" in workspace) {
       return String(workspace.id);
     }
-
     return "unknown";
   }
 
-  private validatePath(workspaceRelativePath: string): Artifact["status"] {
-    const normalized = workspaceRelativePath.replaceAll("\\", "/");
-    if (normalized.startsWith("/") || normalized.includes("../") || normalized === "..") {
-      return "outside_workspace";
-    }
-    if (!normalized.toLowerCase().endsWith(".md")) {
-      return "invalid_type";
-    }
-    if (normalized.includes("missing")) {
-      return "missing";
-    }
-    if (normalized.includes("unreadable")) {
-      return "unreadable";
-    }
-    return "valid";
+  private toArtifact(row: typeof artifacts.$inferSelect): Artifact {
+    return {
+      id: row.id,
+      sessionId: row.sessionId,
+      reportSequence: Number(row.reportSequence),
+      name: row.name,
+      type: "markdown",
+      workspaceRelativePath: row.workspaceRelativePath,
+      status: row.status,
+      producerAgentId: row.producerAgentId,
+      reportedAt: row.reportedAt.toISOString(),
+      validatedAt: row.validatedAt?.toISOString() ?? null,
+    };
   }
 }

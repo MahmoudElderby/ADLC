@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { concat, from, map, type Observable } from "rxjs";
+import { concat, from, map, mergeMap, type Observable } from "rxjs";
 import { SessionEventService } from "../../modules/session-runner/session-event.service.js";
 
 export type SseMessage = {
@@ -20,14 +20,13 @@ export class SessionStreamService {
 
   stream(sessionId: string, lastEventId = 0): Observable<SseMessage> {
     return concat(
-      from(this.replay(sessionId, lastEventId)),
+      from(this.replay(sessionId, lastEventId)).pipe(mergeMap((messages) => from(messages))),
       this.sessionEventService.observe(sessionId).pipe(map((event) => this.toSseMessage(event))),
     );
   }
 
-  replay(sessionId: string, lastEventId = 0): SseMessage[] {
-    return this.sessionEventService
-      .listNormalized(sessionId)
+  async replay(sessionId: string, lastEventId = 0): Promise<SseMessage[]> {
+    return (await this.sessionEventService.listNormalized(sessionId))
       .filter((event) => event.sequence > lastEventId)
       .map((event) => this.toSseMessage(event));
   }

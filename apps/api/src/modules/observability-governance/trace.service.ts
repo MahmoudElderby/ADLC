@@ -14,17 +14,19 @@ export class TraceService {
     private readonly audits: AuditService,
   ) {}
 
-  getTrace(workspaceId: string, sessionId: string, afterSequence = 0) {
-    this.sessions.getSession(workspaceId, sessionId);
-    return this.events.listNormalized(sessionId).filter((event) => event.sequence > afterSequence);
+  async getTrace(workspaceId: string, sessionId: string, afterSequence = 0) {
+    await this.sessions.getSession(workspaceId, sessionId);
+    return (await this.events.listNormalized(sessionId)).filter(
+      (event) => event.sequence > afterSequence,
+    );
   }
 
   async getInvestigation(workspaceId: string, sessionId: string): Promise<SessionInvestigation> {
-    const session = this.sessions.getSession(workspaceId, sessionId);
+    const session = await this.sessions.getSession(workspaceId, sessionId);
     return {
       session,
-      trace: this.getTrace(workspaceId, sessionId),
-      artifacts: this.artifacts.listSessionArtifacts(workspaceId, sessionId),
+      trace: await this.getTrace(workspaceId, sessionId),
+      artifacts: await this.artifacts.listSessionArtifacts(workspaceId, sessionId),
       snapshot: session.snapshotSummary ?? { schemaVersion: 1 },
       audits: (await this.audits.listForEntity(workspaceId, "session", sessionId)).map((audit) => ({
         id: audit.id,

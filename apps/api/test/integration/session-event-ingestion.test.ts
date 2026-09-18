@@ -10,20 +10,20 @@ describe("session event ingestion", () => {
       input: "Create a Markdown report.",
     });
 
-    const first = events.ingestRawEvent(session.id, {
+    const first = await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-1",
       type: "session.output.delta",
       payload: { text: "Working with bearer sk-secret-12345678" },
     });
-    const duplicate = events.ingestRawEvent(session.id, {
+    const duplicate = await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-1",
       type: "session.output.delta",
       payload: { text: "Duplicate" },
     });
 
     expect(duplicate.raw.id).toBe(first.raw.id);
-    expect(events.listNormalized(session.id)).toHaveLength(1);
-    expect(events.listNormalized(session.id)[0]?.summary).not.toContain("sk-secret");
+    expect(await events.listNormalized(session.id)).toHaveLength(1);
+    expect((await events.listNormalized(session.id))[0]?.summary).not.toContain("sk-secret");
   });
 
   it("allocates monotonic sequences and keeps terminal states immutable", async () => {
@@ -34,23 +34,25 @@ describe("session event ingestion", () => {
       input: "Create a Markdown report.",
     });
 
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-running",
       type: "session.state_changed",
       payload: { current: "running" },
     });
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-completed",
       type: "session.state_changed",
       payload: { current: "completed" },
     });
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-failed-late",
       type: "session.state_changed",
       payload: { current: "failed" },
     });
 
-    expect(events.listNormalized(session.id).map((event) => event.sequence)).toEqual([1, 2, 3]);
-    expect(sessions.getSession(workspaceId, session.id).status).toBe("completed");
+    expect((await events.listNormalized(session.id)).map((event) => event.sequence)).toEqual([
+      1, 2, 3,
+    ]);
+    expect((await sessions.getSession(workspaceId, session.id)).status).toBe("completed");
   });
 });

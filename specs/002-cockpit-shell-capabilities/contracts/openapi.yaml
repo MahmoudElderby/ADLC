@@ -1,0 +1,821 @@
+openapi: 3.1.0
+info:
+  title: ADLC Cockpit Shell and Capability Registry API
+  version: 0.2.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  description: >-
+    Slice 002 contract: platform-established operator sessions, skill and MCP
+    registry over PostgreSQL, encrypted credentials, append-only audit, and
+    environment-origin reachability checks. Extends the 001 walking-skeleton
+    API; agent, session, and executor command routes are not delivered here.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      security: []
+      summary: Process health for local orchestration
+      tags: [Platform]
+      responses:
+        "200":
+          description: API process is running.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, status]
+                properties:
+                  service: { const: adlc-api }
+                  status: { const: ok }
+
+  /auth/sign-in:
+    post:
+      operationId: signIn
+      security: []
+      summary: Sign in the pre-provisioned operator
+      tags: [Identity]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+      responses:
+        "204":
+          description: Session cookie set. Body is empty.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: HttpOnly adlc_session cookie.
+        "401":
+          description: Credentials rejected. Body discloses no workspace data.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+
+  /auth/sign-out:
+    post:
+      operationId: signOut
+      summary: Revoke the current session
+      tags: [Identity]
+      responses:
+        "204":
+          description: Session revoked and cookie cleared.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/me:
+    get:
+      operationId: getCurrentIdentity
+      summary: Return the platform-established identity
+      tags: [Identity]
+      responses:
+        "200":
+          description: Acting user and workspace, derived from the session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentIdentity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workspace-environment/health:
+    get:
+      operationId: getWorkspaceEnvironmentHealth
+      summary: Redacted environment and probe-ability status
+      tags: [Workspace Environment]
+      responses:
+        "200":
+          description: Connector presence and whether reachability checks can run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHealth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /capabilities/skills:
+    get:
+      operationId: listSkills
+      summary: List registered skills
+      tags: [Capabilities]
+      responses:
+        "200":
+          description: Skills in the authenticated workspace.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Skill" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: registerSkill
+      summary: Register a referenced skill
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterSkillRequest" }
+      responses:
+        "201":
+          description: Skill persisted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Skill" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /capabilities/skills/{skillId}:
+    parameters:
+      - $ref: "#/components/parameters/SkillId"
+    get:
+      operationId: getSkill
+      summary: Get a skill and its attribution
+      tags: [Capabilities]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Skill" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateSkill
+      summary: Update a skill
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateSkillRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Skill" }
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteSkill
+      summary: Remove a skill when nothing references it
+      tags: [Capabilities]
+      responses:
+        "204":
+          description: Removed.
+        "409":
+          description: Referencing agents named; skill unchanged.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+
+  /capabilities/skills/{skillId}/validate:
+    post:
+      operationId: validateSkill
+      summary: Re-run skill validation
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/SkillId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Skill" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /capabilities/skills/{skillId}/audit:
+    get:
+      operationId: listSkillAudit
+      summary: Append-only history for a skill
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/SkillId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditEntry" }
+
+  /capabilities/skills/draft:validate:
+    post:
+      operationId: validateSkillDraft
+      summary: Live validation of unsaved skill form state
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterSkillRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DraftValidation" }
+
+  /capabilities/mcp:
+    get:
+      operationId: listMcpServers
+      summary: List MCP servers with redacted credential health
+      tags: [Capabilities]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/McpServer" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: registerMcpServer
+      summary: Register an environment-origin HTTP MCP server
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterMcpRequest" }
+      responses:
+        "201":
+          description: MCP persisted. Reachability may be unverified if the environment is offline.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/McpServer" }
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /capabilities/mcp/{mcpId}:
+    parameters:
+      - $ref: "#/components/parameters/McpId"
+    get:
+      operationId: getMcpServer
+      summary: Get an MCP server; never includes credential values
+      tags: [Capabilities]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/McpServer" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateMcpServer
+      summary: Update an MCP server
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateMcpRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/McpServer" }
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteMcpServer
+      summary: Remove an MCP server when nothing references it
+      tags: [Capabilities]
+      responses:
+        "204":
+          description: Removed.
+        "409":
+          description: Referencing agents named; MCP unchanged.
+
+  /capabilities/mcp/{mcpId}/validate:
+    post:
+      operationId: validateMcpServer
+      summary: Issue an environment-side reachability check
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/McpId"
+      responses:
+        "200":
+          description: Updated MCP including reachability from the environment, or unverified.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/McpServer" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /capabilities/mcp/{mcpId}/audit:
+    get:
+      operationId: listMcpAudit
+      summary: Append-only history for an MCP server
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/McpId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditEntry" }
+
+  /capabilities/mcp/draft:validate:
+    post:
+      operationId: validateMcpDraft
+      summary: Live schema validation of unsaved MCP form state (no network probe)
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterMcpRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DraftValidation" }
+
+  /connectors/register:
+    post:
+      operationId: registerConnector
+      security:
+        - connectorRegistrationToken: []
+      summary: Register or rotate the workspace connector
+      tags: [Connector]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterConnectorRequest" }
+      responses:
+        "201":
+          description: Connector id and one-time bearer. Token is not stored by ADLC in plaintext.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegisterConnectorResponse" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /connectors/{connectorId}/heartbeat:
+    post:
+      operationId: connectorHeartbeat
+      security:
+        - connectorBearer: []
+      summary: Connector check-in
+      tags: [Connector]
+      parameters:
+        - $ref: "#/components/parameters/ConnectorId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConnectorHeartbeat" }
+      responses:
+        "200":
+          description: Check-in accepted. No executable payload.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConnectorHeartbeatResponse" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /connectors/{connectorId}/checks/next:
+    get:
+      operationId: nextEnvironmentCheck
+      security:
+        - connectorBearer: []
+      summary: Long-poll the next platform-issued environment check
+      tags: [Connector]
+      parameters:
+        - $ref: "#/components/parameters/ConnectorId"
+        - name: waitSeconds
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 25, default: 25 }
+      responses:
+        "200":
+          description: A typed check, including in-memory credential for MCP handshake when needed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnvironmentCheck" }
+        "204":
+          description: No pending check.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /connectors/{connectorId}/checks/{checkId}/result:
+    post:
+      operationId: reportEnvironmentCheckResult
+      security:
+        - connectorBearer: []
+      summary: Report a redacted check result
+      tags: [Connector]
+      parameters:
+        - $ref: "#/components/parameters/ConnectorId"
+        - $ref: "#/components/parameters/CheckId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EnvironmentCheckResult" }
+      responses:
+        "200":
+          description: Result accepted or rejected according to check id and expiry.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /audit-log:
+    get:
+      operationId: listAuditLog
+      summary: List redacted audit entries in the workspace
+      tags: [Evidence]
+      parameters:
+        - name: entityType
+          in: query
+          schema: { type: string }
+        - name: entityId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditEntry" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: adlc_session
+    connectorBearer:
+      type: http
+      scheme: bearer
+    connectorRegistrationToken:
+      type: http
+      scheme: bearer
+      description: Deployment-time connector registration secret.
+
+  parameters:
+    SkillId:
+      name: skillId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    McpId:
+      name: mcpId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ConnectorId:
+      name: connectorId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CheckId:
+      name: checkId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Authentication is missing, invalid, or expired. No workspace content.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Resource does not exist in the authenticated workspace.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: Unique-label clash, stale updatedAt, or referenced capability.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Blocking validation failed.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    SignInRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 1, writeOnly: true }
+    CurrentIdentity:
+      type: object
+      required: [userId, email, displayName, workspaceId, workspaceName]
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        workspaceId: { type: string, format: uuid }
+        workspaceName: { type: string }
+    ActorSummary:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+    SkillValidationStatus:
+      type: string
+      enum: [pending_validation, valid, invalid]
+    McpReachabilityStatus:
+      type: string
+      enum: [unverified, reachable, unreachable]
+    CredentialHealth:
+      type: string
+      enum: [not_required, healthy, missing, invalid]
+    RegisterSkillRequest:
+      type: object
+      required: [name, description, sourceType, sourceReference, version]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, minLength: 1, maxLength: 1000 }
+        sourceType: { type: string, enum: [openai_skill_id, source_reference] }
+        sourceReference: { type: string, minLength: 1 }
+        version: { type: string, minLength: 1, maxLength: 80 }
+        capabilityDirectories:
+          type: array
+          items: { type: string }
+        compatibleEnvironmentTypes:
+          type: array
+          items: { type: string }
+          default: [self_hosted]
+    UpdateSkillRequest:
+      allOf:
+        - $ref: "#/components/schemas/RegisterSkillRequest"
+        - type: object
+          required: [updatedAt]
+          properties:
+            updatedAt: { type: string, format: date-time }
+    Skill:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - sourceType
+        - sourceReference
+        - version
+        - status
+        - createdBy
+        - lastChangedBy
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        sourceType: { type: string, enum: [openai_skill_id, source_reference] }
+        sourceReference: { type: string }
+        version: { type: string }
+        capabilityDirectories:
+          type: array
+          items: { type: string }
+        status: { $ref: "#/components/schemas/SkillValidationStatus" }
+        validationSummary: { type: [string, "null"] }
+        validatedAt: { type: [string, "null"], format: date-time }
+        createdBy: { $ref: "#/components/schemas/ActorSummary" }
+        lastChangedBy: { $ref: "#/components/schemas/ActorSummary" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RegisterMcpRequest:
+      type: object
+      required: [label, serverUrl, allowedTools, required]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 80 }
+        serverUrl: { type: string, format: uri }
+        transportType: { const: http, default: http }
+        connectionOrigin: { const: environment, default: environment }
+        allowedTools:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string }
+        required: { type: boolean, default: true }
+        credential:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: Write-once secret. Never returned.
+    UpdateMcpRequest:
+      allOf:
+        - $ref: "#/components/schemas/RegisterMcpRequest"
+        - type: object
+          required: [updatedAt]
+          properties:
+            updatedAt: { type: string, format: date-time }
+            credential:
+              type: string
+              writeOnly: true
+              description: Optional replacement secret. Omitted keeps the existing secret.
+    McpServer:
+      type: object
+      required:
+        - id
+        - label
+        - serverUrl
+        - transportType
+        - connectionOrigin
+        - allowedTools
+        - required
+        - status
+        - reachabilityStatus
+        - credentialSecretId
+        - credentialHealth
+        - createdBy
+        - lastChangedBy
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        serverUrl: { type: string, format: uri }
+        transportType: { const: http }
+        connectionOrigin: { const: environment }
+        allowedTools:
+          type: array
+          items: { type: string }
+        required: { type: boolean }
+        status: { $ref: "#/components/schemas/SkillValidationStatus" }
+        reachabilityStatus: { $ref: "#/components/schemas/McpReachabilityStatus" }
+        reachabilitySummary: { type: [string, "null"] }
+        credentialSecretId: { type: [string, "null"], format: uuid }
+        credentialHealth: { $ref: "#/components/schemas/CredentialHealth" }
+        validationSummary: { type: [string, "null"] }
+        validatedAt: { type: string, format: date-time, nullable: true }
+        createdBy: { $ref: "#/components/schemas/ActorSummary" }
+        lastChangedBy: { $ref: "#/components/schemas/ActorSummary" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false
+    DraftValidation:
+      type: object
+      required: [blockingErrors, warnings, preview]
+      properties:
+        blockingErrors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+        preview:
+          type: object
+          additionalProperties: true
+          description: Redacted configuration preview. No secrets.
+    WorkspaceHealth:
+      type: object
+      required: [status, connector, canProbeReachability, checkedAt]
+      properties:
+        status: { type: string, enum: [healthy, degraded, unavailable] }
+        connector: { type: string, enum: [online, degraded, offline] }
+        canProbeReachability: { type: boolean }
+        filesystem: { type: string, enum: [healthy, unreadable, unwritable, missing, unknown] }
+        checkedAt: { type: string, format: date-time }
+        issues:
+          type: array
+          items: { type: string }
+    RegisterConnectorRequest:
+      type: object
+      required: [name, hostFingerprint, connectorVersion, workspacePath]
+      properties:
+        name: { type: string }
+        hostFingerprint: { type: string }
+        connectorVersion: { type: string }
+        platform: { type: string }
+        workspacePath: { type: string }
+    RegisterConnectorResponse:
+      type: object
+      required: [connectorId, token, workspaceId]
+      properties:
+        connectorId: { type: string, format: uuid }
+        token: { type: string, writeOnly: true }
+        workspaceId: { type: string, format: uuid }
+    ConnectorHeartbeat:
+      type: object
+      required: [connectorVersion, observedAt]
+      properties:
+        connectorVersion: { type: string }
+        hostFingerprint: { type: string }
+        platform: { type: string }
+        workspace:
+          type: object
+          properties:
+            readable: { type: boolean }
+            writable: { type: boolean }
+        activeExecutors: { type: integer, minimum: 0 }
+        observedAt: { type: string, format: date-time }
+    ConnectorHeartbeatResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+        revalidate: { type: boolean }
+        rotateToken: { type: boolean }
+    EnvironmentCheck:
+      type: object
+      required: [checkId, type, expiresAt]
+      properties:
+        checkId: { type: string, format: uuid }
+        type: { type: string, enum: [mcp_reachability, environment_health] }
+        mcpId: { type: string, format: uuid }
+        serverUrl: { type: string, format: uri }
+        allowedTools:
+          type: array
+          items: { type: string }
+        credential:
+          type: string
+          writeOnly: true
+          description: In-memory only. Absent for environment_health.
+        workspacePath: { type: string }
+        expiresAt: { type: string, format: date-time }
+    EnvironmentCheckResult:
+      type: object
+      required: [status, observedAt]
+      properties:
+        status: { type: string, enum: [answered, failed] }
+        reachability: { type: string, enum: [reachable, unreachable] }
+        handshake: { type: string, enum: [accepted, rejected, not_attempted] }
+        allowedToolsPresent: { type: boolean }
+        filesystem:
+          type: string
+          enum: [healthy, unreadable, unwritable, missing]
+        observedAt: { type: string, format: date-time }
+        errorCode: { type: [string, "null"] }
+        message: { type: [string, "null"] }
+    AuditEntry:
+      type: object
+      required: [id, actor, action, entityType, entityId, outcome, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actor: { $ref: "#/components/schemas/ActorSummary" }
+        action: { type: string }
+        entityType: { type: string }
+        entityId: { type: string, format: uuid }
+        outcome: { type: string, enum: [succeeded, failed] }
+        metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status, detail, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string, format: uuid }
+        referencingAgents:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

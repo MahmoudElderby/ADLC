@@ -34,7 +34,17 @@ export class ConnectorControlPlaneClient {
 
   async heartbeat() {
     await withTimeout(
-      Promise.resolve(),
+      fetch(`${this.options.apiUrl}/api/v1/connectors/${this.options.connectorId}/heartbeat`, {
+        method: "POST",
+        headers: {
+          Authorization: this.authorizationHeader(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          connectorVersion: "0.1.0",
+          observedAt: new Date().toISOString(),
+        }),
+      }).catch(() => undefined),
       connectorTimeouts.heartbeatMs,
       "Connector heartbeat timed out.",
     );
@@ -46,12 +56,31 @@ export class ConnectorControlPlaneClient {
 
   async nextCommand(waitSeconds = 25): Promise<CommandEnvelope | null> {
     boundedTimeoutMs(waitSeconds * 1_000, connectorTimeouts.longPollMs);
-    return null;
+    const response = await withTimeout(
+      fetch(
+        `${this.options.apiUrl}/api/v1/connectors/${this.options.connectorId}/commands/next?waitSeconds=${waitSeconds}`,
+        { headers: { Authorization: this.authorizationHeader() } },
+      ).catch(() => undefined),
+      connectorTimeouts.longPollMs,
+      "Connector long-poll timed out.",
+    );
+    if (!response || !response.ok) {
+      return null;
+    }
+    return (await response.json()) as CommandEnvelope | null;
   }
 
   async reportResult(commandId: string, result: CommandResult): Promise<void> {
-    void commandId;
-    void result;
-    return undefined;
+    await fetch(
+      `${this.options.apiUrl}/api/v1/connectors/${this.options.connectorId}/commands/${commandId}/result`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: this.authorizationHeader(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(result),
+      },
+    ).catch(() => undefined);
   }
 }

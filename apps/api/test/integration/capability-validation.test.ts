@@ -3,22 +3,33 @@ import { CapabilityRegistryService } from "../../src/modules/capability-registry
 import { AuditRepository } from "../../src/modules/observability-governance/audit.repository.js";
 import { AuditService } from "../../src/modules/observability-governance/audit.service.js";
 import { ConnectorCommandService } from "../../src/modules/workspace-environment/connector-command.service.js";
+import { WorkspaceBootstrap } from "../../src/platform/database/workspace-bootstrap.js";
 import { RedactionService } from "../../src/platform/security/redaction.service.js";
+import { SecretVaultService } from "../../src/platform/security/secret-vault.service.js";
+import { getSharedTestPostgres } from "@adlc/test-support";
 
-function createService() {
+async function createService() {
+  const postgres = await getSharedTestPostgres();
+  const redaction = new RedactionService();
+  const bootstrap = new WorkspaceBootstrap(
+    postgres.db,
+    new SecretVaultService("test-root-key-that-is-definitely-32-bytes"),
+    redaction,
+  );
   return new CapabilityRegistryService(
+    postgres.db,
+    bootstrap,
     new ConnectorCommandService(),
-    new AuditService(new AuditRepository(), new RedactionService()),
+    new AuditService(new AuditRepository(postgres.db), redaction),
   );
 }
 
 describe("capability validation", () => {
-  const workspaceId = "00000000-0000-4000-8000-000000000010";
-  const actorId = "00000000-0000-4000-8000-000000000011";
-
-  it("enforces skill name/version and MCP label uniqueness", () => {
-    const service = createService();
-    service.registerSkill(workspaceId, actorId, {
+  it("enforces skill name/version and MCP label uniqueness", async () => {
+    const service = await createService();
+    const workspaceId = crypto.randomUUID();
+    const actorId = crypto.randomUUID();
+    await service.registerSkill(workspaceId, actorId, {
       name: "planning",
       description: "Planning skill",
       sourceType: "source_reference",
@@ -27,7 +38,7 @@ describe("capability validation", () => {
       capabilityDirectories: [],
     });
 
-    expect(() =>
+    await expect(
       service.registerSkill(workspaceId, actorId, {
         name: "planning",
         description: "Duplicate",
@@ -36,9 +47,9 @@ describe("capability validation", () => {
         version: "1.0.0",
         capabilityDirectories: [],
       }),
-    ).toThrow();
+    ).rejects.toThrow();
 
-    service.registerMcp(workspaceId, actorId, {
+    await service.registerMcp(workspaceId, actorId, {
       label: "devops",
       serverUrl: "https://devops.example.test/mcp",
       transportType: "http",
@@ -48,7 +59,7 @@ describe("capability validation", () => {
       credentialSecretId: null,
     });
 
-    expect(() =>
+    await expect(
       service.registerMcp(workspaceId, actorId, {
         label: "devops",
         serverUrl: "https://devops-copy.example.test/mcp",
@@ -58,12 +69,14 @@ describe("capability validation", () => {
         required: true,
         credentialSecretId: null,
       }),
-    ).toThrow();
+    ).rejects.toThrow();
   });
 
   it("records validation status for connector-origin reachability", async () => {
-    const service = createService();
-    const mcp = service.registerMcp(workspaceId, actorId, {
+    const service = await createService();
+    const workspaceId = crypto.randomUUID();
+    const actorId = crypto.randomUUID();
+    const mcp = await service.registerMcp(workspaceId, actorId, {
       label: "private-devops",
       serverUrl: "https://unreachable.example.test/mcp",
       transportType: "http",

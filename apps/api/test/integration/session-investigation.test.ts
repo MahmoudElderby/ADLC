@@ -9,27 +9,27 @@ describe("session investigation", () => {
       agentId: fixture.publishedAgent.id,
       input: "Investigate run",
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "1",
       type: "session.output.delta",
       payload: { text: "Started sk-secret-12345678" },
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "2",
       type: "tool.call.started",
       payload: { toolName: "mcp", token: "sk-secret-12345678" },
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "3",
       type: "artifact.reported",
       payload: { name: "report.md" },
     });
-    fixture.artifacts.recordArtifactReport(session, {
+    await fixture.artifacts.recordArtifactReport(session, {
       sourceEventId: "3",
       name: "report.md",
       workspaceRelativePath: "artifacts/report.md",
     });
-    fixture.sessions.transition(
+    await fixture.sessions.transition(
       fixture.workspaceId,
       fixture.actorId,
       session.id,

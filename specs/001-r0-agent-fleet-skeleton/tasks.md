@@ -285,3 +285,27 @@ T070 Command Center Playwright journey
 - **Polish tasks**: 8
 - **Suggested MVP**: Phases 1-3 (User Story 1)
 - **Complete walking skeleton**: Phases 1-6
+
+---
+
+## Phase 7: Convergence
+
+**Purpose**: Close remaining gaps between the specified walking skeleton and the current codebase. Existing tasks T001–T088 stay unchanged.
+
+- [X] T089 CRITICAL Encrypt runtime and MCP secrets with SecretVaultService and never store remote URLs or credential values in plaintext maps per Constitution secrets MUST and data-model `session_runtime_secrets` (contradicts)
+- [X] T090 CRITICAL Replace the in-memory AuditRepository array with Drizzle append-only `audit_log` inserts and selects only per Constitution V and FR-021 (contradicts)
+- [X] T091 CRITICAL Persist skills and MCP servers through the Drizzle workspace-scoped tables instead of process Maps per plan storage decision and FR-002/FR-003 (contradicts)
+- [X] T092 CRITICAL Persist agents, immutable published `agent_versions`, and capability attachments in Drizzle and stop mutating published versions in place per FR-008, Constitution III, and data-model agent version immutability (contradicts)
+- [X] T093 CRITICAL Persist sessions, schema-versioned redacted snapshots, encrypted runtime secrets, and connector commands in Drizzle, writing the local session and snapshot before any OpenAI call per FR-010–FR-013 and plan end-to-end step 4 (contradicts)
+- [X] T094 CRITICAL Persist raw and normalized events and artifacts in Drizzle with `(session_id, source_event_id)` idempotency, one-to-one normalization, and one artifact row per report occurrence per FR-017, FR-020, and FR-025 (contradicts)
+- [X] T095 HIGH Persist `live_fleet_sessions` in Drizzle with data-model columns and delete the projection row for completed, failed, canceled, and interrupted sessions in the same transaction as the state change per FR-015 and FR-016 (partial)
+- [X] T096 HIGH Persist workspace environment settings and connectors, and implement connector heartbeat plus command long-poll/result endpoints from `contracts/connector-protocol.md` per FR-001 and FR-012 (missing)
+- [X] T097 HIGH Dispatch `start_executor`/`stop_executor` on session start/cancel and run the workspace-connector command loop so only official `codex exec-server` is launched per FR-011, FR-029, and plan end-to-end step 5 (missing)
+- [X] T098 HIGH Ingest upstream session events on the production path, create artifact records from `artifact.reported`, and drive the four distinct terminal states per FR-014, FR-017, and FR-027 (missing)
+- [X] T099 HIGH Replace string-heuristic capability and artifact probes with typed connector workspace-health, MCP reachability, and Markdown filesystem validation per FR-004, FR-012, and FR-019 (partial)
+- [X] T100 HIGH Wire Capability Registry, Agent Editor, Workspace Health, Start Session, and Session Detail pages to the API (including SSE progress) instead of local or hardcoded state per US1, US2, FR-002–FR-016, and FR-022 (partial)
+- [X] T101 HIGH Convert contract tests to HTTP OpenAPI route tests and run PostgreSQL-backed integration tests for append-only audit, published-version immutability, event idempotency, and artifact identity per plan testing strategy (partial)
+- [X] T102 MEDIUM Complete `effective_config_snapshot_json` to the data-model snapshot shape including instructions hash, skill version, MCP host summary, and credential fingerprint only per FR-013 (partial)
+- [X] T103 MEDIUM Scope session SSE and stream APIs to the authenticated workspace and owned session per workspace scoping (partial)
+- [X] T104 MEDIUM Align Drizzle TypeScript column types with SQL and the data model, including boolean `required` flags and live-fleet `agent_name`/`skill_count`/`mcp_count`/`started_at` per plan data model (partial)
+- [X] T105 LOW Move `CapabilityRegistryService.forceMcpStatus` off the production service into test fixtures per unrequested test helper (unrequested)

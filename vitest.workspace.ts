@@ -8,6 +8,8 @@ export default defineWorkspace([
       ...sharedVitestConfig.test,
       name: "api",
       include: ["apps/api/test/**/*.test.ts"],
+      fileParallelism: false,
+      maxWorkers: 1,
     },
   },
   {

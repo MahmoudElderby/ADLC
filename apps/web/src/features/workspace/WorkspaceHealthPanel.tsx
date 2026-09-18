@@ -1,29 +1,37 @@
-import type { WorkspaceHealth } from "@adlc/contracts";
+import { useQuery } from "@tanstack/react-query";
+import { workspaceHealthSchema, type WorkspaceHealth } from "@adlc/contracts";
+import { apiFetch } from "../../lib/api.js";
 
-const defaultHealth: WorkspaceHealth = {
-  status: "healthy",
-  connector: "online",
-  filesystem: "healthy",
-  executor: "available",
-  checkedAt: new Date().toISOString(),
-  issues: [],
-};
+export function WorkspaceHealthPanel({ health }: { health?: WorkspaceHealth }) {
+  const remote = useQuery({
+    queryKey: ["workspace-health"],
+    queryFn: () => apiFetch("/workspace-environment/health", workspaceHealthSchema),
+    enabled: !health,
+  });
+  const value = health ??
+    remote.data ?? {
+      status: "healthy" as const,
+      connector: "online" as const,
+      filesystem: "healthy" as const,
+      executor: "available" as const,
+      checkedAt: new Date().toISOString(),
+      issues: [],
+    };
 
-export function WorkspaceHealthPanel({ health = defaultHealth }: { health?: WorkspaceHealth }) {
   return (
     <section aria-label="Workspace health">
       <h2>Workspace Health</h2>
       <dl>
         <dt>Connector</dt>
-        <dd>{health.connector}</dd>
+        <dd>{value.connector}</dd>
         <dt>Filesystem</dt>
-        <dd>{health.filesystem}</dd>
+        <dd>{value.filesystem}</dd>
         <dt>Executor</dt>
-        <dd>{health.executor}</dd>
+        <dd>{value.executor}</dd>
       </dl>
-      {health.issues.length > 0 && (
+      {value.issues.length > 0 && (
         <ul aria-label="Readiness blockers">
-          {health.issues.map((issue) => (
+          {value.issues.map((issue) => (
             <li key={issue}>{issue}</li>
           ))}
         </ul>

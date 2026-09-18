@@ -11,6 +11,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --project test-support"
   },
+  "dependencies": {
+    "@adlc/database": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "catalog:",

@@ -11,23 +11,23 @@ describe("session stream contract", () => {
       input: "Create a Markdown report.",
     });
 
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-1",
       type: "session.state_changed",
       payload: { current: "running" },
     });
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-2",
       type: "tool.call.started",
       payload: { toolName: "create_work_item", token: "secret-token" },
     });
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-3",
       type: "artifact.reported",
       payload: { name: "report.md", workspaceRelativePath: "artifacts/report.md" },
     });
 
-    const replay = stream.replay(session.id, 1);
+    const replay = await stream.replay(session.id, 1);
     expect(replay.map((event) => event.id)).toEqual([2, 3]);
     expect(JSON.stringify(replay)).not.toContain("secret-token");
     expect(new Set(replay.map((event) => event.event))).toEqual(
@@ -35,7 +35,7 @@ describe("session stream contract", () => {
     );
 
     const followed = firstValueFrom(stream.stream(session.id, 2).pipe(take(2), toArray()));
-    events.ingestRawEvent(session.id, {
+    await events.ingestRawEvent(session.id, {
       sourceEventId: "evt-4",
       type: "session.output.delta",
       payload: { text: "Live update" },

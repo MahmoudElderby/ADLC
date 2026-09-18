@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -77,7 +78,7 @@ export const agentCapabilityAttachments = pgTable(
       .references(() => agentVersions.id, { onDelete: "cascade" }),
     capabilityType: text("capability_type").notNull(),
     capabilityId: uuid("capability_id").notNull(),
-    required: text("required").notNull().default("true"),
+    required: boolean("required").notNull().default(true),
     configOverrideRedactedJson: jsonb("config_override_redacted_json").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

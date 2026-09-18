@@ -16,52 +16,61 @@ export class CommandCenterService {
     private readonly projector?: LiveFleetProjector,
   ) {}
 
-  getLiveFleet(workspaceId: string): LiveFleetItem[] {
-    const rows =
-      this.projector?.list(workspaceId) ??
-      this.sessions
-        .listSessions(workspaceId)
-        .filter((s) => !["completed", "failed", "canceled", "interrupted"].includes(s.status))
-        .map((s) => ({
-          sessionId: s.id,
-          workspaceId,
-          agentId: s.agentId,
-          status: s.status as "creating" | "provisioning" | "running",
-          lastSummary: s.failureSummary,
-          lastEventAt: s.startedAt ?? s.createdAt,
-        }));
-    return rows.map((row) => {
-      const session = this.sessions.getSession(workspaceId, row.sessionId);
-      const agent = this.sessions.agentRegistryService.getAgent(workspaceId, row.agentId);
-      return {
+  async getLiveFleet(workspaceId: string): Promise<LiveFleetItem[]> {
+    const rows = this.projector
+      ? await this.projector.list(workspaceId)
+      : (await this.sessions.listSessions(workspaceId))
+          .filter((session) => !["completed", "failed", "canceled", "interrupted"].includes(session.status))
+          .map((session) => ({
+            sessionId: session.id,
+            workspaceId,
+            agentId: session.agentId,
+            agentName: "",
+            status: session.status as "creating" | "provisioning" | "running",
+            skillCount: 0,
+            mcpCount: 0,
+            lastSummary: session.failureSummary,
+            lastEventAt: session.startedAt ?? session.createdAt,
+            startedAt: session.startedAt,
+          }));
+
+    const items: LiveFleetItem[] = [];
+    for (const row of rows) {
+      const session = await this.sessions.getSession(workspaceId, row.sessionId);
+      const agent = await this.sessions.agentRegistryService.getAgent(workspaceId, row.agentId);
+      const events = await this.events.listNormalized(row.sessionId);
+      items.push({
         sessionId: row.sessionId,
         agentId: row.agentId,
         agentName: agent.name,
         status: row.status,
-        skillCount: agent.capabilities.filter((c) => c.type === "skill").length,
-        mcpCount: agent.capabilities.filter((c) => c.type === "mcp_server").length,
-        lastSummary: this.events.listNormalized(row.sessionId).at(-1)?.summary ?? row.lastSummary,
-        lastEventAt:
-          this.events.listNormalized(row.sessionId).at(-1)?.occurredAt ?? row.lastEventAt,
+        skillCount: agent.capabilities.filter((capability) => capability.type === "skill").length,
+        mcpCount: agent.capabilities.filter((capability) => capability.type === "mcp_server").length,
+        lastSummary: events.at(-1)?.summary ?? row.lastSummary,
+        lastEventAt: events.at(-1)?.occurredAt ?? row.lastEventAt,
         links: { session: `/sessions/${session.id}`, agent: `/agents/${agent.id}` },
-      };
-    });
+      });
+    }
+    return items;
   }
 
-  listHistory(workspaceId: string): SessionHistoryItem[] {
-    return this.sessions.listSessions(workspaceId).map((session) => {
-      const agent = this.sessions.agentRegistryService.getAgent(workspaceId, session.agentId);
-      return {
-        sessionId: session.id,
-        agentId: agent.id,
-        agentName: agent.name,
-        status: session.status,
-        createdAt: session.createdAt,
-        terminalAt: session.terminalAt,
-        failureSummary: session.failureSummary,
-        links: { session: `/sessions/${session.id}`, agent: `/agents/${agent.id}` },
-      };
-    });
+  async listHistory(workspaceId: string): Promise<SessionHistoryItem[]> {
+    const sessions = await this.sessions.listSessions(workspaceId);
+    return Promise.all(
+      sessions.map(async (session) => {
+        const agent = await this.sessions.agentRegistryService.getAgent(workspaceId, session.agentId);
+        return {
+          sessionId: session.id,
+          agentId: agent.id,
+          agentName: agent.name,
+          status: session.status,
+          createdAt: session.createdAt,
+          terminalAt: session.terminalAt,
+          failureSummary: session.failureSummary,
+          links: { session: `/sessions/${session.id}`, agent: `/agents/${agent.id}` },
+        };
+      }),
+    );
   }
 
   async listAudits(workspaceId: string, entityType?: string, entityId?: string) {

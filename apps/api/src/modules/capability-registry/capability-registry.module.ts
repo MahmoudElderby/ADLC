@@ -1,20 +1,12 @@
 import { Module } from "@nestjs/common";
-import { AuditRepository } from "../observability-governance/audit.repository.js";
-import { AuditService } from "../observability-governance/audit.service.js";
-import { ConnectorCommandService } from "../workspace-environment/connector-command.service.js";
+import { ObservabilityGovernanceModule } from "../observability-governance/observability-governance.module.js";
 import { CapabilityRegistryController } from "./capability-registry.controller.js";
 import { CapabilityRegistryService } from "./capability-registry.service.js";
-import { RedactionService } from "../../platform/security/redaction.service.js";
 
 @Module({
+  imports: [ObservabilityGovernanceModule],
   controllers: [CapabilityRegistryController],
-  providers: [
-    CapabilityRegistryService,
-    ConnectorCommandService,
-    AuditRepository,
-    AuditService,
-    RedactionService,
-  ],
+  providers: [CapabilityRegistryService],
   exports: [CapabilityRegistryService],
 })
 export class CapabilityRegistryModule {}

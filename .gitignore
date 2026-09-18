@@ -15,6 +15,7 @@ temp/
 node_modules/
 dist/
 build/
+coverage/
 .next/
 .vite/
 test-results/

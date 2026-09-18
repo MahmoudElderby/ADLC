@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createReadyAgentFixture } from "./support/us2-fixtures.js";
+import { createReadyAgentFixture, forceMcpStatus } from "./support/us2-fixtures.js";
 
 describe("session readiness", () => {
   it("blocks draft agents and unhealthy workspace starts with explanations", async () => {
@@ -14,7 +14,7 @@ describe("session readiness", () => {
       }),
     ).rejects.toThrow("published");
 
-    sessions.workspaceEnvironmentService.setHealth({
+    await sessions.workspaceEnvironmentService.setHealth(workspaceId, {
       status: "unavailable",
       connector: "offline",
       filesystem: "healthy",
@@ -44,11 +44,11 @@ describe("session readiness", () => {
       input: "Use bearer sk-secret-12345678 and create report.md",
     });
 
-    expect(sessions.getRuntimeSecret(session.id)).toMatch(/^wss:\/\//);
+    expect(await sessions.getRuntimeSecret(session.id)).toMatch(/^wss:\/\//);
     expect(JSON.stringify(session)).not.toContain("wss://");
     expect(JSON.stringify(session.snapshotSummary)).not.toContain("sk-secret-12345678");
     expect(JSON.stringify(session.snapshotSummary)).not.toContain(
-      sessions.getRuntimeSecret(session.id),
+      await sessions.getRuntimeSecret(session.id),
     );
     expect(session.snapshotSummary).toMatchObject({
       schemaVersion: 1,
@@ -56,14 +56,15 @@ describe("session readiness", () => {
       agent: { id: publishedAgent.id, approvalMode: "always_allow" },
     });
 
-    const claimed = sessions.claimRuntimeSecret(session.id);
+    const claimed = await sessions.claimRuntimeSecret(session.id);
     expect(claimed).toMatch(/^wss:\/\//);
-    expect(sessions.getRuntimeSecret(session.id)).toBeUndefined();
+    expect(await sessions.getRuntimeSecret(session.id)).toBeUndefined();
   });
 
   it("checks current capability reachability before session start", async () => {
-    const { sessions, workspaceId, actorId, publishedAgent, mcp } = await createReadyAgentFixture();
-    sessions.capabilityRegistryService.forceMcpStatus(workspaceId, mcp.id, "unreachable");
+    const { sessions, workspaceId, actorId, publishedAgent, mcp, db } =
+      await createReadyAgentFixture();
+    await forceMcpStatus(db, workspaceId, mcp.id, "unreachable");
 
     await expect(
       sessions.startSession(workspaceId, actorId, {

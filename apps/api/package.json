@@ -26,6 +26,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@adlc/test-support": "workspace:*",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "tsx": "^4.20.5",

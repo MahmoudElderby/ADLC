@@ -7,7 +7,15 @@ export function SessionProgress({ status }: { status: SessionStatus }) {
       <ol>
         <li>Provisioning</li>
         <li>Running</li>
-        {status === "canceled" ? <li>Canceled</li> : <li>Completed</li>}
+        {status === "canceled" ? (
+          <li>Canceled</li>
+        ) : status === "failed" ? (
+          <li>Failed</li>
+        ) : status === "interrupted" ? (
+          <li>Interrupted</li>
+        ) : (
+          <li>Completed</li>
+        )}
       </ol>
     </section>
   );

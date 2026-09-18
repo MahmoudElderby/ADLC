@@ -36,6 +36,13 @@
       "when": 1768700004000,
       "tag": "0005_command_center",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768700005000,
+      "tag": "0006_convergence_alignment",
+      "breakpoints": true
     }
   ]
 }

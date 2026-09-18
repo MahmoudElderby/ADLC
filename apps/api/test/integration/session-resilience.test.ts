@@ -9,14 +9,14 @@ describe("session resilience", () => {
       agentId: fixture.publishedAgent.id,
       input: "Create a report",
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "partial-1",
       type: "tool.call.started",
       payload: { toolName: "mcp", token: "sk-secret-12345678" },
     });
     const stream = new SessionStreamService(fixture.events);
-    expect(JSON.stringify(stream.replay(session.id))).not.toContain("sk-secret-12345678");
-    fixture.sessions.transition(
+    expect(JSON.stringify(await stream.replay(session.id))).not.toContain("sk-secret-12345678");
+    await fixture.sessions.transition(
       fixture.workspaceId,
       fixture.actorId,
       session.id,
@@ -24,9 +24,11 @@ describe("session resilience", () => {
       "Connector lost.",
     );
 
-    expect(fixture.sessions.getSession(fixture.workspaceId, session.id).status).toBe("interrupted");
-    expect(fixture.events.listNormalized(session.id)).toHaveLength(1);
-    expect(JSON.stringify(fixture.events.listNormalized(session.id))).not.toContain(
+    expect((await fixture.sessions.getSession(fixture.workspaceId, session.id)).status).toBe(
+      "interrupted",
+    );
+    expect(await fixture.events.listNormalized(session.id)).toHaveLength(1);
+    expect(JSON.stringify(await fixture.events.listNormalized(session.id))).not.toContain(
       "sk-secret-12345678",
     );
   });
@@ -37,24 +39,24 @@ describe("session resilience", () => {
       agentId: fixture.publishedAgent.id,
       input: "Stream progress",
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "one",
       type: "session.output.delta",
       payload: { text: "one" },
     });
-    fixture.events.ingestRawEvent(session.id, {
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "two",
       type: "session.output.delta",
       payload: { text: "two" },
     });
     const stream = new SessionStreamService(fixture.events);
 
-    expect(stream.replay(session.id, 1).map((event) => event.id)).toEqual([2]);
-    fixture.events.ingestRawEvent(session.id, {
+    expect((await stream.replay(session.id, 1)).map((event) => event.id)).toEqual([2]);
+    await fixture.events.ingestRawEvent(session.id, {
       sourceEventId: "two",
       type: "session.output.delta",
       payload: { text: "duplicate" },
     });
-    expect(fixture.events.listNormalized(session.id)).toHaveLength(2);
+    expect(await fixture.events.listNormalized(session.id)).toHaveLength(2);
   });
 });

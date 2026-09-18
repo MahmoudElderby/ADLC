@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   type McpServer,
   type RegisterMcpRequest,
@@ -7,46 +7,57 @@ import {
   registerMcpRequestSchema,
   registerSkillRequestSchema,
 } from "@adlc/contracts";
+import { mcpServers, skills } from "@adlc/database";
+import { and, eq } from "drizzle-orm";
+import { DATABASE, type Database } from "../../platform/database/database.module.js";
+import { WorkspaceBootstrap } from "../../platform/database/workspace-bootstrap.js";
 import { AuditService } from "../observability-governance/audit.service.js";
 import { ConnectorCommandService } from "../workspace-environment/connector-command.service.js";
 
-const now = () => new Date().toISOString();
-
 @Injectable()
 export class CapabilityRegistryService {
-  private readonly skills = new Map<string, Skill & { workspaceId: string }>();
-  private readonly mcps = new Map<string, McpServer & { workspaceId: string }>();
-
   constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly bootstrap: WorkspaceBootstrap,
     private readonly connectorCommandService: ConnectorCommandService,
     private readonly auditService: AuditService,
   ) {}
 
-  listSkills(workspaceId: string): Skill[] {
-    return [...this.skills.values()].filter((skill) => skill.workspaceId === workspaceId);
+  async listSkills(workspaceId: string): Promise<Skill[]> {
+    const rows = await this.db.select().from(skills).where(eq(skills.workspaceId, workspaceId));
+    return rows.map((row) => this.toSkill(row));
   }
 
-  registerSkill(workspaceId: string, actorId: string, input: RegisterSkillRequest): Skill {
+  async registerSkill(
+    workspaceId: string,
+    actorId: string,
+    input: RegisterSkillRequest,
+  ): Promise<Skill> {
+    await this.bootstrap.ensureWorkspace(workspaceId);
     const request = registerSkillRequestSchema.parse(input);
-    const duplicate = this.listSkills(workspaceId).find(
+    const duplicate = (await this.listSkills(workspaceId)).find(
       (skill) => skill.name === request.name && skill.version === request.version,
     );
-
     if (duplicate) {
       throw new ConflictException("Skill name and version must be unique in the workspace.");
     }
 
-    const skill: Skill & { workspaceId: string } = {
-      ...request,
-      id: crypto.randomUUID(),
-      workspaceId,
-      status: "pending_validation",
-      validationSummary: null,
-      validatedAt: null,
-    };
-
-    this.skills.set(skill.id, skill);
-    void this.auditService.record({
+    const [row] = await this.db
+      .insert(skills)
+      .values({
+        workspaceId,
+        name: request.name,
+        description: request.description,
+        sourceType: request.sourceType,
+        sourceReference: request.sourceReference,
+        version: request.version,
+        capabilityDirectoriesJson: request.capabilityDirectories,
+        compatibleEnvironmentTypesJson: ["self_hosted"],
+        status: "pending_validation",
+      })
+      .returning();
+    const skill = this.toSkill(row);
+    await this.auditService.record({
       workspaceId,
       actorId,
       action: "skill.registered",
@@ -60,42 +71,59 @@ export class CapabilityRegistryService {
   }
 
   async validateSkill(workspaceId: string, skillId: string): Promise<Skill> {
-    const skill = this.getSkill(workspaceId, skillId);
+    const skill = await this.getSkill(workspaceId, skillId);
     const result = await this.connectorCommandService.validateSkill(skill.sourceReference);
-    const updated = {
-      ...skill,
-      status: result.status,
-      validationSummary: result.summary,
-      validatedAt: now(),
-    };
-    this.skills.set(skillId, updated);
-    return updated;
+    const [row] = await this.db
+      .update(skills)
+      .set({
+        status: result.status,
+        validationSummary: result.summary,
+        validatedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(skills.id, skillId), eq(skills.workspaceId, workspaceId)))
+      .returning();
+    return this.toSkill(row);
   }
 
-  listMcpServers(workspaceId: string): McpServer[] {
-    return [...this.mcps.values()].filter((mcp) => mcp.workspaceId === workspaceId);
+  async listMcpServers(workspaceId: string): Promise<McpServer[]> {
+    const rows = await this.db
+      .select()
+      .from(mcpServers)
+      .where(eq(mcpServers.workspaceId, workspaceId));
+    return rows.map((row) => this.toMcp(row));
   }
 
-  registerMcp(workspaceId: string, actorId: string, input: RegisterMcpRequest): McpServer {
+  async registerMcp(
+    workspaceId: string,
+    actorId: string,
+    input: RegisterMcpRequest,
+  ): Promise<McpServer> {
+    await this.bootstrap.ensureWorkspace(workspaceId);
     const request = registerMcpRequestSchema.parse(input);
-    const duplicate = this.listMcpServers(workspaceId).find((mcp) => mcp.label === request.label);
-
+    const duplicate = (await this.listMcpServers(workspaceId)).find(
+      (mcp) => mcp.label === request.label,
+    );
     if (duplicate) {
       throw new ConflictException("MCP label must be unique in the workspace.");
     }
 
-    const mcp: McpServer & { workspaceId: string } = {
-      ...request,
-      id: crypto.randomUUID(),
-      workspaceId,
-      status: "pending_validation",
-      credentialHealth: request.credentialSecretId ? "healthy" : "not_required",
-      validationSummary: null,
-      validatedAt: null,
-    };
-
-    this.mcps.set(mcp.id, mcp);
-    void this.auditService.record({
+    const [row] = await this.db
+      .insert(mcpServers)
+      .values({
+        workspaceId,
+        label: request.label,
+        transportType: "http",
+        serverUrl: request.serverUrl,
+        connectionOrigin: "environment",
+        allowedToolsJson: request.allowedTools,
+        required: request.required,
+        credentialSecretId: request.credentialSecretId,
+        status: "pending_validation",
+      })
+      .returning();
+    const mcp = this.toMcp(row);
+    await this.auditService.record({
       workspaceId,
       actorId,
       action: "mcp.registered",
@@ -109,53 +137,88 @@ export class CapabilityRegistryService {
   }
 
   async validateMcp(workspaceId: string, mcpId: string): Promise<McpServer> {
-    const mcp = this.getMcp(workspaceId, mcpId);
-    const result = await this.connectorCommandService.validateMcp(mcp.serverUrl, mcp.allowedTools);
-    const updated = {
-      ...mcp,
-      status: result.status,
-      validationSummary: result.summary,
-      validatedAt: now(),
-    };
-    this.mcps.set(mcpId, updated);
-    return updated;
+    const mcp = await this.getMcp(workspaceId, mcpId);
+    const result = await this.connectorCommandService.validateMcp(
+      mcp.serverUrl,
+      mcp.allowedTools,
+      Boolean(mcp.credentialSecretId),
+    );
+    const [row] = await this.db
+      .update(mcpServers)
+      .set({
+        status: result.status,
+        validationSummary: result.summary,
+        validatedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(mcpServers.id, mcpId), eq(mcpServers.workspaceId, workspaceId)))
+      .returning();
+    return this.toMcp(row);
   }
 
-  getSkill(workspaceId: string, skillId: string): Skill & { workspaceId: string } {
-    const skill = this.skills.get(skillId);
-    if (!skill || skill.workspaceId !== workspaceId) {
+  async getSkill(workspaceId: string, skillId: string): Promise<Skill & { workspaceId: string }> {
+    const [row] = await this.db
+      .select()
+      .from(skills)
+      .where(and(eq(skills.id, skillId), eq(skills.workspaceId, workspaceId)))
+      .limit(1);
+    if (!row) {
       throw new NotFoundException("Skill not found.");
     }
-    return skill;
+    return { ...this.toSkill(row), workspaceId };
   }
 
-  getMcp(workspaceId: string, mcpId: string): McpServer & { workspaceId: string } {
-    const mcp = this.mcps.get(mcpId);
-    if (!mcp || mcp.workspaceId !== workspaceId) {
+  async getMcp(workspaceId: string, mcpId: string): Promise<McpServer & { workspaceId: string }> {
+    const [row] = await this.db
+      .select()
+      .from(mcpServers)
+      .where(and(eq(mcpServers.id, mcpId), eq(mcpServers.workspaceId, workspaceId)))
+      .limit(1);
+    if (!row) {
       throw new NotFoundException("MCP server not found.");
     }
-    return mcp;
+    return { ...this.toMcp(row), workspaceId };
   }
 
-  hasValidCapability(
+  async hasValidCapability(
     workspaceId: string,
     type: "skill" | "mcp_server",
     capabilityId: string,
-  ): boolean {
+  ): Promise<boolean> {
     return type === "skill"
-      ? this.getSkill(workspaceId, capabilityId).status === "valid"
-      : this.getMcp(workspaceId, capabilityId).status === "valid";
+      ? (await this.getSkill(workspaceId, capabilityId)).status === "valid"
+      : (await this.getMcp(workspaceId, capabilityId)).status === "valid";
   }
 
-  forceMcpStatus(
-    workspaceId: string,
-    mcpId: string,
-    status: McpServer["status"],
-    summary = "Forced test status.",
-  ): McpServer {
-    const mcp = this.getMcp(workspaceId, mcpId);
-    const updated = { ...mcp, status, validationSummary: summary, validatedAt: now() };
-    this.mcps.set(mcpId, updated);
-    return updated;
+  private toSkill(row: typeof skills.$inferSelect): Skill {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      sourceType: row.sourceType as Skill["sourceType"],
+      sourceReference: row.sourceReference,
+      version: row.version,
+      capabilityDirectories: (row.capabilityDirectoriesJson as string[]) ?? [],
+      status: row.status,
+      validationSummary: row.validationSummary,
+      validatedAt: row.validatedAt?.toISOString() ?? null,
+    };
+  }
+
+  private toMcp(row: typeof mcpServers.$inferSelect): McpServer {
+    return {
+      id: row.id,
+      label: row.label,
+      serverUrl: row.serverUrl,
+      transportType: "http",
+      connectionOrigin: "environment",
+      allowedTools: (row.allowedToolsJson as string[]) ?? [],
+      required: row.required,
+      credentialSecretId: row.credentialSecretId,
+      credentialHealth: row.credentialSecretId ? "healthy" : "not_required",
+      status: row.status,
+      validationSummary: row.validationSummary,
+      validatedAt: row.validatedAt?.toISOString() ?? null,
+    };
   }
 }
