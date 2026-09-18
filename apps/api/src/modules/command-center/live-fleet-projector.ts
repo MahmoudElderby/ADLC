@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import type { Session, SessionStatus } from "@adlc/contracts";
 import { SessionService } from "../session-runner/session.service.js";
 
@@ -15,7 +15,7 @@ export type LiveFleetRow = {
 @Injectable()
 export class LiveFleetProjector {
   private readonly rows = new Map<string, LiveFleetRow>();
-  constructor(private readonly sessions: SessionService) {
+  constructor(@Inject(SessionService) private readonly sessions: SessionService) {
     this.sessions.setLiveFleetProjector(this);
   }
 
