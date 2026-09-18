@@ -76,6 +76,24 @@ export class AgentRegistryService {
     return this.getStoredAgent(workspaceId, agentId);
   }
 
+  listPublishedAgents(workspaceId: string): Agent[] {
+    return this.listAgents(workspaceId).filter((agent) => agent.status === "published");
+  }
+
+  getPublishedAgentForSession(workspaceId: string, agentId: string) {
+    const agent = this.getStoredAgent(workspaceId, agentId);
+    if (agent.status !== "published" || !agent.publishedVersion || !agent.publishedConfig) {
+      throw new ConflictException("A published agent is required before starting a session.");
+    }
+
+    return {
+      agent,
+      versionId: agent.id,
+      versionNumber: agent.publishedVersion,
+      config: structuredClone(agent.publishedConfig),
+    };
+  }
+
   updateDraft(
     workspaceId: string,
     actorId: string,

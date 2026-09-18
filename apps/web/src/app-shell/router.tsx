@@ -1,15 +1,12 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AgentEditorPage } from "../features/agents/AgentEditorPage.js";
 import { CapabilityRegistryPage } from "../features/capabilities/CapabilityRegistryPage.js";
+import { SessionDetailPage } from "../features/sessions/SessionDetailPage.js";
+import { StartSessionPage } from "../features/sessions/StartSessionPage.js";
+import { WorkspaceHealthPanel } from "../features/workspace/WorkspaceHealthPanel.js";
 
 function CommandCenterPlaceholder() {
   return <section aria-label="Command Center">Command Center foundation ready.</section>;
-}
-
-function WorkspacePlaceholder() {
-  return (
-    <section aria-label="Workspace Environment">Workspace environment foundation ready.</section>
-  );
 }
 
 export const router = createBrowserRouter([
@@ -23,7 +20,12 @@ export const router = createBrowserRouter([
   },
   {
     path: "/workspace",
-    element: <WorkspacePlaceholder />,
+    element: (
+      <main>
+        <h1>Workspace Environment</h1>
+        <WorkspaceHealthPanel />
+      </main>
+    ),
   },
   {
     path: "/capabilities",
@@ -32,5 +34,13 @@ export const router = createBrowserRouter([
   {
     path: "/agents/new",
     element: <AgentEditorPage />,
+  },
+  {
+    path: "/sessions/new",
+    element: <StartSessionPage />,
+  },
+  {
+    path: "/sessions/preview",
+    element: <SessionDetailPage />,
   },
 ]);

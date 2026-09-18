@@ -146,4 +146,16 @@ export class CapabilityRegistryService {
       ? this.getSkill(workspaceId, capabilityId).status === "valid"
       : this.getMcp(workspaceId, capabilityId).status === "valid";
   }
+
+  forceMcpStatus(
+    workspaceId: string,
+    mcpId: string,
+    status: McpServer["status"],
+    summary = "Forced test status.",
+  ): McpServer {
+    const mcp = this.getMcp(workspaceId, mcpId);
+    const updated = { ...mcp, status, validationSummary: summary, validatedAt: now() };
+    this.mcps.set(mcpId, updated);
+    return updated;
+  }
 }
