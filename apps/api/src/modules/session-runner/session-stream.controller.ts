@@ -1,11 +1,11 @@
-import { Controller, Headers, Param, Sse } from "@nestjs/common";
+import { Controller, Headers, Inject, Param, Sse } from "@nestjs/common";
 import type { Observable } from "rxjs";
 import type { SseMessage } from "../../platform/streaming/session-stream.service.js";
 import { SessionStreamService } from "../../platform/streaming/session-stream.service.js";
 
 @Controller("sessions/:sessionId/stream")
 export class SessionStreamController {
-  constructor(private readonly sessionStreamService: SessionStreamService) {}
+  constructor(@Inject(SessionStreamService) private readonly sessionStreamService: SessionStreamService) {}
 
   @Sse()
   stream(

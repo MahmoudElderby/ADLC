@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { concat, from, map, mergeMap, type Observable } from "rxjs";
 import { SessionEventService } from "../../modules/session-runner/session-event.service.js";
 
@@ -16,7 +16,7 @@ export type SseMessage = {
 
 @Injectable()
 export class SessionStreamService {
-  constructor(private readonly sessionEventService: SessionEventService) {}
+  constructor(@Inject(SessionEventService) private readonly sessionEventService: SessionEventService) {}
 
   stream(sessionId: string, lastEventId = 0): Observable<SseMessage> {
     return concat(

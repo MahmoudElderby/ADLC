@@ -1,0 +1,10 @@
+{
+  "description": "Empowers software teams to create, manage, and monitor AI agents across the development lifecycle for streamlined, automated SDLC workflows.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

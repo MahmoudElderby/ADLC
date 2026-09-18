@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import type { SessionInvestigation } from "@adlc/contracts";
 import { ArtifactService } from "./artifact.service.js";
 import { AuditService } from "./audit.service.js";
@@ -8,10 +8,10 @@ import { SessionService } from "../session-runner/session.service.js";
 @Injectable()
 export class TraceService {
   constructor(
-    private readonly sessions: SessionService,
-    private readonly events: SessionEventService,
-    private readonly artifacts: ArtifactService,
-    private readonly audits: AuditService,
+    @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SessionEventService) private readonly events: SessionEventService,
+    @Inject(ArtifactService) private readonly artifacts: ArtifactService,
+    @Inject(AuditService) private readonly audits: AuditService,
   ) {}
 
   async getTrace(workspaceId: string, sessionId: string, afterSequence = 0) {
@@ -28,16 +28,7 @@ export class TraceService {
       trace: await this.getTrace(workspaceId, sessionId),
       artifacts: await this.artifacts.listSessionArtifacts(workspaceId, sessionId),
       snapshot: session.snapshotSummary ?? { schemaVersion: 1 },
-      audits: (await this.audits.listForEntity(workspaceId, "session", sessionId)).map((audit) => ({
-        id: audit.id,
-        actorId: audit.actorId,
-        action: audit.action,
-        entityType: audit.entityType,
-        entityId: audit.entityId,
-        outcome: audit.outcome,
-        metadata: audit.metadataRedactedJson,
-        createdAt: audit.createdAt.toISOString(),
-      })),
+      audits: await this.audits.listEntriesForEntity(workspaceId, "session", sessionId),
     } as SessionInvestigation;
   }
 }

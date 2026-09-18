@@ -90,11 +90,36 @@ Poll response:
 }
 ```
 
+The connector performs an **MCP Streamable HTTP** handshake from the environment
+network (**product owner ratification 2026-09-18**). A TCP/HTTP 200 ping is not
+a handshake and MUST NOT be treated as `reachable`.
+
+Handshake sequence:
+
+1. `POST {serverUrl}` with `Content-Type: application/json`,
+   `Accept: application/json, text/event-stream`, and
+   `Authorization: Bearer <credential>` (**credential presentation ratified
+   2026-09-18**; query-string auth is forbidden; structured header-name+value
+   blobs are deferred).
+2. JSON-RPC `initialize` (protocol version `2025-03-26` or the version the
+   test MCP advertises).
+3. JSON-RPC `tools/list`.
+4. Discard the credential from memory. Do not persist session ids beyond the
+   check.
+
+Outcome mapping:
+
+| What happened | `handshake` | `allowedToolsPresent` | `reachability` |
+|---|---|---|---|
+| `initialize` succeeds and `tools/list` includes ≥1 configured allowed tool | `accepted` | `true` | `reachable` |
+| `initialize` succeeds and `tools/list` includes none of the allowed tools | `accepted` | `false` | `unreachable` |
+| HTTP 401/403 or MCP error that is an auth failure | `rejected` | `false` | `unreachable` |
+| Connection failure, timeout, or non-MCP HTTP response | `not_attempted` or `rejected` | `false` | `unreachable` |
+
 The connector:
 
-- performs a real HTTP handshake from the environment network
 - uses `credential` only in memory, then discards it
-- returns reachability, whether the server advertised at least one allowed tool, and a **redacted** error summary
+- returns reachability, handshake, whether the server advertised at least one allowed tool, and a **redacted** error summary
 - never returns response bodies, headers that look like secrets, directory listings, or the credential
 
 Result:

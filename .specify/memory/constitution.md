@@ -1,38 +1,3 @@
-<!--
-Sync Impact Report
-Version change: 1.0.0 -> 1.1.0
-Rationale: Spec 001 reached a Phase 6 PASS verification while producing no
-operable product increment. Its acceptance evidence was satisfiable entirely
-against mocked APIs and in-memory stores, and its UI never implemented the
-mandated app shell. This amendment adds the missing delivery constraint so a
-spec cannot be accepted without a reviewable end-to-end increment.
-Added principles:
-- VI. Vertical Slice Delivery
-Modified sections:
-- Development and Specification Workflow (demo script and acceptance evidence rules)
-- Governance (version bump)
-Affected specs requiring review:
-- specs/001-r0-agent-fleet-skeleton: reclassified to Implementing; acceptance
-  deferred to specs 003, 004, and 009 per docs/09-product-gap-assessment.md
-Affected module plans and ADRs: none require wording changes
-Follow-up TODOs: None
-
-Sync Impact Report
-Version change: template -> 1.0.0
-Modified principles:
-- [PRINCIPLE_1_NAME] -> I. General Fleet Control Plane
-- [PRINCIPLE_2_NAME] -> II. OpenAI-Managed Execution, ADLC-Owned Control
-- [PRINCIPLE_3_NAME] -> III. Agent-Owned Capability and Validation
-- [PRINCIPLE_4_NAME] -> IV. Orchestrated Sequential Workflows
-- [PRINCIPLE_5_NAME] -> V. Auditable System Agents and Execution History
-Added sections:
-- R0 Product Boundaries
-- Development and Specification Workflow
-Removed sections:
-- Placeholder SECTION_2_NAME
-- Placeholder SECTION_3_NAME
-Follow-up TODOs: None
--->
 # ADLC Constitution
 
 ## Core Principles
@@ -103,6 +68,29 @@ visible slice within the same release. Verification reports MUST disclose which
 boundaries were exercised with substitutes, and MUST NOT record a passing result
 for a requirement whose real boundary was never crossed.
 
+### VII. Binding Visual Design System
+The Command Center visual language is a product contract, not optional
+inspiration. Frontend-facing work MUST implement the tokens, typography, status
+semantics, shell geometry, motion rules, and component recipes documented in
+`docs/07-frontend-ui-guidelines.md`,
+`apps/Debate AI SDLC Command Center UI/DESIGN_SYSTEM.md`, and
+`apps/Debate AI SDLC Command Center UI/src/DesignSystem.tsx`.
+
+Shipping CSS variables or column widths without those primitives is not
+compliance. Production screens MUST use the documented recipes as live
+`@adlc/ui` primitives: StatusDot, Badge, ID chips, ALL-CAPS section labels,
+icon rail, entity rows, button variants, Field / FormSection, creation
+workspace, and validation panel. Styling MUST use Tailwind v4 utility classes
+that match `DesignSystem.tsx`. Inline `style` objects MUST NOT encode static
+design tokens.
+
+The prototype `App.tsx` is a composition example and MUST NOT be copied
+wholesale as application source. Extract the primitives into `@adlc/ui`;
+feature pages in `apps/web` own routes and data only. A later slice MUST NOT
+invent a second accent color, a new status family, or a competing component
+language unless this constitution and the design-system documents are amended
+first.
+
 ## R0 Product Boundaries
 
 The Command Center MUST be an operational status surface. It shows active
@@ -154,10 +142,15 @@ outcome at each step, and the setup required beforehand. The demo script is
 written during specification, not after implementation, and a spec is not
 accepted until a reviewer can follow it successfully.
 
-Frontend-facing specifications MUST comply with `docs/07-frontend-ui-guidelines.md`
-unless the UI guideline document is explicitly amended. App screens MUST preserve
-the sliced workspace shell, operational density, status semantics, and persistent
-Platform Chat behavior defined there.
+Frontend-facing specifications MUST comply with
+`docs/07-frontend-ui-guidelines.md` and with the design-system documents named
+in Principle VII unless those documents are explicitly amended. App screens MUST
+preserve the sliced workspace shell, operational density, status semantics,
+component recipes, and persistent Platform Chat behavior defined there.
+Extracting only hex colors or layout sizes from those documents is not
+compliance. Claims about user-facing appearance MUST be reviewable in the
+running browser against the documented recipes, not inferred from the existence
+of unused CSS variables.
 
 Implementation planning MUST keep the modular-monolith direction from the project
 docs unless superseded by an accepted ADR. Module boundaries MUST remain explicit:
@@ -194,4 +187,4 @@ compliance is required during specification review, implementation planning, tas
 breakdown, and code review. When in doubt, prefer the simpler R0 boundary and
 defer expansion until real workflow usage proves the need.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-18 | **Last Amended**: 2026-09-18
+**Version**: 1.2.0 | **Ratified**: 2026-09-18 | **Last Amended**: 2026-09-19

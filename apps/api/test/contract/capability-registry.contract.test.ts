@@ -20,6 +20,10 @@ describe("capability registry contracts", () => {
         status: "valid",
         validationSummary: "ok",
         validatedAt: "2026-09-18T00:00:00.000Z",
+        createdBy: { id: "00000000-0000-4000-8000-000000000009", displayName: "Operator" },
+        lastChangedBy: { id: "00000000-0000-4000-8000-000000000009", displayName: "Operator" },
+        createdAt: "2026-09-18T00:00:00.000Z",
+        updatedAt: "2026-09-18T00:00:00.000Z",
       }),
     ).not.toThrow();
   });
@@ -33,6 +37,7 @@ describe("capability registry contracts", () => {
         connectionOrigin: "service",
         allowedTools: [],
         required: true,
+        credential: "secret",
       }),
     ).toThrow();
 
@@ -48,8 +53,14 @@ describe("capability registry contracts", () => {
         credentialSecretId: "00000000-0000-4000-8000-000000000003",
         credentialHealth: "healthy",
         status: "valid",
+        reachabilityStatus: "reachable",
+        reachabilitySummary: "reachable",
         validationSummary: "reachable",
         validatedAt: "2026-09-18T00:00:00.000Z",
+        createdBy: { id: "00000000-0000-4000-8000-000000000009", displayName: "Operator" },
+        lastChangedBy: { id: "00000000-0000-4000-8000-000000000009", displayName: "Operator" },
+        createdAt: "2026-09-18T00:00:00.000Z",
+        updatedAt: "2026-09-18T00:00:00.000Z",
       }).credentialSecretId,
     ).toBe("00000000-0000-4000-8000-000000000003");
   });

@@ -11,7 +11,9 @@
     "test": "vitest run --project api"
   },
   "dependencies": {
+    "@fastify/cookie": "catalog:",
     "@fastify/cors": "catalog:",
+    "argon2": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-fastify": "catalog:",

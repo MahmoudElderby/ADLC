@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, Query, Sse } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Inject, Param, Post, Query, Sse } from "@nestjs/common";
 import type { Observable } from "rxjs";
 import type { SessionStartRequest, SessionStatus } from "@adlc/contracts";
 import { CurrentRequestContext, type RequestContext } from "../../platform/auth/request-context.js";
@@ -11,10 +11,10 @@ import { SessionService } from "./session.service.js";
 @Controller("sessions")
 export class SessionController {
   constructor(
-    private readonly sessionService: SessionService,
-    private readonly artifactService: ArtifactService,
-    private readonly sessionEventService: SessionEventService,
-    private readonly sessionStreamService: SessionStreamService,
+    @Inject(SessionService) private readonly sessionService: SessionService,
+    @Inject(ArtifactService) private readonly artifactService: ArtifactService,
+    @Inject(SessionEventService) private readonly sessionEventService: SessionEventService,
+    @Inject(SessionStreamService) private readonly sessionStreamService: SessionStreamService,
   ) {}
 
   @Get()

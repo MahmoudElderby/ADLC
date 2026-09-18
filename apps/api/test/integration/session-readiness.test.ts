@@ -17,6 +17,7 @@ describe("session readiness", () => {
     await sessions.workspaceEnvironmentService.setHealth(workspaceId, {
       status: "unavailable",
       connector: "offline",
+      canProbeReachability: false,
       filesystem: "healthy",
       executor: "available",
       checkedAt: "2026-09-18T00:00:00.000Z",

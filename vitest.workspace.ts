@@ -1,15 +1,37 @@
+import swc from "unplugin-swc";
 import { defineWorkspace } from "vitest/config";
 import { sharedVitestConfig } from "./config/vitest/vitest.shared.js";
 
 export default defineWorkspace([
   {
     ...sharedVitestConfig,
+    plugins: [
+      swc.vite({
+        jsc: {
+          target: "es2022",
+          parser: { syntax: "typescript", decorators: true },
+          transform: {
+            legacyDecorator: true,
+            decoratorMetadata: true,
+            useDefineForClassFields: false,
+          },
+        },
+        module: { type: "es6" },
+      }),
+    ],
     test: {
       ...sharedVitestConfig.test,
       name: "api",
       include: ["apps/api/test/**/*.test.ts"],
+      setupFiles: ["apps/api/test/setup-env.ts"],
       fileParallelism: false,
+      pool: "forks",
       maxWorkers: 1,
+      poolOptions: {
+        forks: {
+          singleFork: true,
+        },
+      },
     },
   },
   {

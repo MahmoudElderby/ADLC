@@ -1,8 +1,11 @@
 import { Controller, Get, Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { DatabaseModule } from "./platform/database/database.module.js";
 import { PlatformSecurityModule } from "./platform/security/platform-security.module.js";
+import { Public } from "./platform/auth/public.decorator.js";
+import { AuthModule } from "./platform/auth/auth.module.js";
 import { WorkspaceUserGuard } from "./platform/auth/workspace-user.guard.js";
+import { ProblemDetailsFilter } from "./platform/http/problem-details.filter.js";
 import { AgentRegistryModule } from "./modules/agent-registry/agent-registry.module.js";
 import { CapabilityRegistryModule } from "./modules/capability-registry/capability-registry.module.js";
 import { CommandCenterModule } from "./modules/command-center/command-center.module.js";
@@ -12,6 +15,7 @@ import { WorkspaceEnvironmentModule } from "./modules/workspace-environment/work
 
 @Controller("health")
 class HealthController {
+  @Public()
   @Get()
   getHealth() {
     return {
@@ -25,6 +29,7 @@ class HealthController {
   imports: [
     DatabaseModule,
     PlatformSecurityModule,
+    AuthModule,
     ObservabilityGovernanceModule,
     CapabilityRegistryModule,
     AgentRegistryModule,
@@ -37,6 +42,10 @@ class HealthController {
     {
       provide: APP_GUARD,
       useClass: WorkspaceUserGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ProblemDetailsFilter,
     },
   ],
 })

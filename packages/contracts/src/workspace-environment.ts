@@ -8,8 +8,14 @@ import {
 
 export const executorCredentialHealthSchema = z.enum(["healthy", "missing", "invalid"]);
 export const workspaceOverallHealthSchema = z.enum(["healthy", "degraded", "unavailable"]);
-export const filesystemHealthSchema = z.enum(["healthy", "unreadable", "unwritable", "missing"]);
-export const executorHealthSchema = z.enum(["available", "unavailable", "incompatible"]);
+export const filesystemHealthSchema = z.enum([
+  "healthy",
+  "unreadable",
+  "unwritable",
+  "missing",
+  "unknown",
+]);
+export const executorHealthSchema = z.enum(["available", "unavailable", "incompatible", "unknown"]);
 
 export const workspaceEnvironmentSchema = z.object({
   id: uuidSchema,
@@ -23,8 +29,9 @@ export const workspaceEnvironmentSchema = z.object({
 export const workspaceHealthSchema = z.object({
   status: workspaceOverallHealthSchema,
   connector: connectorStatusSchema,
-  filesystem: filesystemHealthSchema,
-  executor: executorHealthSchema,
+  canProbeReachability: z.boolean(),
+  filesystem: filesystemHealthSchema.optional(),
+  executor: executorHealthSchema.optional(),
   checkedAt: dateTimeSchema,
   issues: z.array(z.string()).default([]),
 });

@@ -43,8 +43,9 @@ The shell is not shipped as chrome around placeholders. Skills and MCP registrat
 | IV. Orchestrated sequential workflows | PASS | PASS | Workflows are out of scope; nothing in this design adds agent-to-agent routing. |
 | V. Auditable system agents and execution history | PASS | PASS | Every 002 state change appends redacted `audit_log` rows. The existing mutation trigger remains the append-only gate. No Platform Chat agent is introduced. |
 | **VI. Vertical slice delivery** | PASS | PASS | See below. |
+| **VII. Binding visual design system** | n/a at specify | PASS (amended 2026-09-19) | `contracts/ui-shell.md` now binds `@adlc/ui` to `DESIGN_SYSTEM.md` / `DesignSystem.tsx`. Tokens and geometry alone are not compliance. |
 | Command Center is operational, not a configuration surface | PASS | PASS | Command Center is not a rail item in this slice. Configuration happens on Skills and MCP creation workspaces. |
-| Frontend specs comply with UI guidelines | PASS | PASS | Shell geometry, tokens, status families, typography split, and creation-workspace rules are in `contracts/ui-shell.md`. |
+| Frontend specs comply with UI guidelines | PASS | PASS | Shell geometry, DesignSystem primitives, status families, typography split, and creation-workspace rules are in `contracts/ui-shell.md`. |
 | Secrets never reach the browser or sit in plaintext | PASS | PASS | Write-only `credential`; encrypted at rest; redaction canaries; connector may hold a credential only in memory for a check. |
 | Explicit module ownership and service-mediated cross-module writes | PASS | PASS | New identity tables owned by Observability and Governance; checks owned by Workspace Environment; capabilities own skill/MCP rows; delete-guard reads attachments through a port. |
 | Required integration, UI, and real-boundary test depth | PASS | PASS | HTTP contract tests, PostgreSQL integration, and one Playwright path with no intercepts are specified in Testing Strategy and `quickstart.md`. |
@@ -147,7 +148,7 @@ tests/
 
 - Cookie name `adlc_session` (already in 001 OpenAPI).
 - Token: 256-bit random, SHA-256 stored.
-- Idle 8 hours / absolute 24 hours (planning default).
+- Idle 8 hours / absolute 24 hours. **Ratified by product owner 2026-09-18**, chosen so a reviewer working through the 24-step `demo.md` is not signed out mid-walkthrough. Tightening this is an explicit R2 hardening item, not an oversight.
 - Vite proxy in development so the cookie is same-site.
 - `GET /health` and `POST /auth/sign-in` and connector routes are public or connector-authenticated.
 
@@ -159,16 +160,17 @@ See `contracts/connector-protocol.md`. 002 loop is heartbeat + `checks/next` + `
 
 - Unit: redaction, password verify, session expiry, status mapping, draft validation, optimistic-concurrency compare, check expiry → unverified.
 - Integration (real PostgreSQL): skill/MCP persist across process restart, unique labels, encrypted_value not plaintext, audit trigger rejects UPDATE/DELETE, connector offline → unverified, API process does not HTTP-get the MCP URL, delete-guard with seeded attachment.
-- Contract: HTTP against `contracts/openapi.yaml` for auth, capabilities, connector checks, 401 empty disclosure.
-- Playwright `tests/e2e/cockpit-capabilities.spec.ts`: real stack, no intercepts, covers sign-in, shell, skill save, restart, MCP secret absence, connector-stop unverified. This is the SC-010 evidence.
-- Compose/Testcontainers networks: test MCP reachable from connector, not from API, for SC-012 mechanism. VPN-only server remains `demo.md`.
+- Contract: HTTP against `contracts/openapi.yaml` for auth, capabilities, connector checks, 401 `application/problem+json` with no workspace disclosure.
+- Playwright `tests/e2e/cockpit-capabilities.spec.ts` in project `cockpit-002`: real stack (webServer boots web+API+Postgres+connector+test MCPs), no `/api/` intercepts, covers sign-in, shell, skill save, OS-process API restart, MCP secret absence, connector-stop unverified, Streamable HTTP handshake. This is the SC-010 evidence and a CI gate. Completing `verification.md` is a record of that run, not a substitute for it.
+- Compose/Testcontainers networks: (A) test MCP the connector can reach and the API cannot; (B) test MCP the API can reach and the connector cannot — must never become `reachable`. VPN-only server remains `demo.md`.
 - Spec 001 Playwright files stay in the repo and must not be cited as 002 acceptance.
 
 ## Design Notes and Risks
 
 - **Slice size**: Shell + identity + persistence + encrypted secrets + connector checks + real e2e is a large implementation pass. That pairing is the point of `docs/09-product-gap-assessment.md` section 7–8. Implementation must still sequence User Stories P1 → P2 → P3. It is a schedule risk, not a constitution fail.
 - **Working tree**: Some files already import `DatabaseModule` and insert skills/audit. That work is not done: identity is still headers, probes are still in-process heuristics, UI is still unstyled. 002 must correct those paths rather than add a second store.
-- **Demo step 24**: Requires a published agent reference while Agent Registry UI is out of scope. Planned as a seeded fixture in demo/test setup, not an in-slice agent editor.
+- **Demo step 24**: Requires a published agent reference while Agent Registry UI is out of scope. **Ratified by product owner 2026-09-18 (updated after analyze)**: seed a published agent with **no** attachment so the registry starts empty. After the reviewer (or e2e) has saved a capability, a documented attach command links that row to the seeded agent. The reviewer never touches an agent editor. Pulling an attach/publish UI into 002 was explicitly rejected.
+- **MCP handshake**: **Ratified by product owner 2026-09-18**: MCP Streamable HTTP JSON-RPC `initialize` then `tools/list`. Credential is `Authorization: Bearer <credential>`. Query-string auth is forbidden. An HTTP ping MUST NOT count as reachable.
 - **T104 `bytea` vs `text`**: Shipping SQL uses `text` for `encrypted_value`. 002 keeps `text` as the opaque envelope and does not migrate to `bytea`.
 - **001 leftover command loop**: Must not be used as 002 evidence and must not be the MCP probe channel.
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-18
 
-**Status**: Draft
+**Status**: Done (accepted 2026-09-18 with SC-012 B caveat; see `verification.md`)
 
 **Input**: User description: "Deliver the operational cockpit shell and one complete vertical through it: an authenticated user registers skills and MCP servers that are durably stored, validated, audited, and free of exposed secrets."
 
@@ -22,9 +22,12 @@ placeholder data. One durable, audited, secret-safe entity family proves the
 shell, the identity boundary, the storage boundary, and the audit boundary in a
 single reviewable demo, and every later slice inherits all four.
 
-Governing documents: `.specify/memory/constitution.md` v1.1.0 (Principle VI
-requires an operable increment and forbids acceptance on mocked evidence) and
-`docs/07-frontend-ui-guidelines.md` (the durable UI contract).
+Governing documents: `.specify/memory/constitution.md` v1.2.0 (Principle VI
+requires an operable increment and forbids acceptance on mocked evidence;
+Principle VII binds the visual design system),
+`docs/07-frontend-ui-guidelines.md`,
+`apps/Debate AI SDLC Command Center UI/DESIGN_SYSTEM.md`, and
+`apps/Debate AI SDLC Command Center UI/src/DesignSystem.tsx`.
 
 ## Clarifications
 
@@ -33,6 +36,10 @@ requires an operable increment and forbids acceptance on mocked evidence) and
 - Q: Should the navigation rail show all product areas from the UI guidelines with not-yet-available states, or only the areas that have working screens? → A: Only areas with working screens; each later slice adds its own area, so the rail never contains a dead end.
 - Q: Where should MCP reachability be measured in this slice? → A: From the real execution environment. This slice delivers the minimum environment-side probe needed to measure it truthfully, rather than reporting a platform-service result that would mislead about VPN-only servers.
 - Q: Which sign-in method should R0 use? → A: A single pre-provisioned operator account. This is the smallest change that moves identity from a browser claim to a platform-established fact; multi-user accounts and external providers are deferred.
+
+### Session 2026-09-19
+
+- Q: Is the in-repo design system (`DESIGN_SYSTEM.md` + `DesignSystem.tsx`) binding for this slice, or may implementation extract only tokens and shell sizes? → A: Binding. Constitution v1.2.0 Principle VII. Tokens and geometry alone are not compliance; live screens MUST use the documented primitives (icon rail, StatusDot, Badge, ID chips, ALL-CAPS labels, Field / FormSection, button variants, creation workspace, validation panel). Functional acceptance of 002 still stands; the visual contract is amended in place rather than deferred to a later spec.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -51,8 +58,9 @@ by a visible slice in the same release.
 **Independent Test**: A tester with valid workspace credentials and an empty
 workspace can sign in, navigate every available product area, collapse and expand
 the assistant panel, reload the page on a deep link, and sign out — confirming the
-shell behaves per `docs/07-frontend-ui-guidelines.md` and that no workspace data
-is reachable before signing in.
+shell matches `docs/07-frontend-ui-guidelines.md` and
+`DesignSystem.tsx` (icon rail, status primitives, typography, button and field
+recipes) and that no workspace data is reachable before signing in.
 
 **Acceptance Scenarios**:
 
@@ -212,8 +220,9 @@ the stored credential is unreadable at rest.
 #### Workspace Shell
 
 - **FR-006**: The application MUST present the sliced workspace shell defined in
-  `docs/07-frontend-ui-guidelines.md`, with a persistent top bar, navigation rail,
-  entity column, main workspace, and assistant panel.
+  `docs/07-frontend-ui-guidelines.md` and `DESIGN_SYSTEM.md`, with a persistent
+  top bar, icon navigation rail, entity column, main workspace, and assistant
+  panel, using the `@adlc/ui` primitives specified by `DesignSystem.tsx`.
 - **FR-007**: The assistant panel MUST support expanded, collapsed, and hidden
   states, MUST resize the main workspace rather than overlay it when expanded, and
   MUST remember the user's choice across navigation and reload.
@@ -227,10 +236,14 @@ the stored credential is unreadable at rest.
   addressable by a shareable link that restores the same view for an authorized
   user.
 - **FR-011**: Status MUST be expressed only through the status families defined in
-  `docs/07-frontend-ui-guidelines.md`, applied consistently across rows, badges,
-  indicators, and headers; new states MUST be mapped into an existing family.
+  `docs/07-frontend-ui-guidelines.md` and `DESIGN_SYSTEM.md`, applied consistently
+  across StatusDot, Badge, entity rows, and headers; new states MUST be mapped
+  into an existing family.
 - **FR-012**: The interface MUST distinguish human-facing copy from
-  machine-facing metadata as defined in `docs/07-frontend-ui-guidelines.md`.
+  machine-facing metadata as defined in `DESIGN_SYSTEM.md` (Inter vs JetBrains
+  Mono), MUST use ALL-CAPS section labels and monospace ID chips, and MUST
+  compose screens from the documented Field, FormSection, button, and
+  validation-panel recipes rather than unstyled native controls.
 - **FR-013**: Configuration surfaces and operational status surfaces MUST remain
   visibly distinct areas, and configuration MUST NOT be performed from the
   operational cockpit view.

@@ -28,6 +28,7 @@ describe("session runner contracts", () => {
       workspaceHealthSchema.parse({
         status: "healthy",
         connector: "online",
+        canProbeReachability: false,
         filesystem: "healthy",
         executor: "available",
         checkedAt: "2026-09-18T00:00:00.000Z",

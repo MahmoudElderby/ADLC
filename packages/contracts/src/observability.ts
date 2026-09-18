@@ -6,10 +6,11 @@ import {
   sessionSchema,
 } from "./sessions.js";
 import { uuidSchema, dateTimeSchema, auditOutcomeSchema } from "./common.js";
+import { actorSummarySchema } from "./auth.js";
 
 export const auditEntrySchema = z.object({
   id: uuidSchema,
-  actorId: uuidSchema,
+  actor: actorSummarySchema,
   action: z.string(),
   entityType: z.string(),
   entityId: uuidSchema,

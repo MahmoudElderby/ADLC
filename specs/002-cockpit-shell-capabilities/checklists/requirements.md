@@ -31,7 +31,7 @@
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 
-## Constitution Compliance (v1.1.0)
+## Constitution Compliance (v1.2.0)
 
 - [x] Principle VI: delivers a user-visible increment including its UI surface
 - [x] Principle VI: acceptance is not satisfiable against mocks or substituted
@@ -40,8 +40,9 @@
       slice in the same release (User Stories 2 and 3)
 - [x] Principle VI: `demo.md` exists, was written at specification time, and its
       steps map to acceptance scenarios rather than to implementation steps
-- [x] Frontend behavior defers to `docs/07-frontend-ui-guidelines.md` rather than
-      inventing a competing UI contract (FR-006, FR-011, FR-012)
+- [x] Frontend behavior defers to `docs/07-frontend-ui-guidelines.md`,
+      `DESIGN_SYSTEM.md`, and `DesignSystem.tsx` rather than inventing a
+      competing UI contract (FR-006, FR-011, FR-012; Principle VII)
 - [x] Configuration and operational surfaces remain distinct (FR-013)
 - [x] Secrets never reach the browser and are not plaintext at rest (FR-028,
       FR-029)

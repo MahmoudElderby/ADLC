@@ -30,15 +30,17 @@ export class SessionService {
 
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly bootstrap: WorkspaceBootstrap,
-    public readonly agentRegistryService: AgentRegistryService,
+    @Inject(WorkspaceBootstrap) private readonly bootstrap: WorkspaceBootstrap,
+    @Inject(AgentRegistryService) public readonly agentRegistryService: AgentRegistryService,
+    @Inject(CapabilityRegistryService)
     public readonly capabilityRegistryService: CapabilityRegistryService,
-    private readonly readinessService: SessionReadinessService,
+    @Inject(SessionReadinessService) private readonly readinessService: SessionReadinessService,
+    @Inject(WorkspaceEnvironmentService)
     public readonly workspaceEnvironmentService: WorkspaceEnvironmentService,
-    private readonly openAISessionAdapter: OpenAISessionAdapter,
-    private readonly auditService: AuditService,
-    private readonly redactionService: RedactionService,
-    private readonly secretVault: SecretVaultService,
+    @Inject(OpenAISessionAdapter) private readonly openAISessionAdapter: OpenAISessionAdapter,
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(RedactionService) private readonly redactionService: RedactionService,
+    @Inject(SecretVaultService) private readonly secretVault: SecretVaultService,
   ) {}
 
   async startSession(

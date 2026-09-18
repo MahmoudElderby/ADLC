@@ -29,6 +29,14 @@ jobs:
       TEST_DATABASE_URL: postgres://adlc:adlc_dev_password@localhost:5432/adlc
       OPENAI_API_KEY: test-openai-key
       SECRET_ENCRYPTION_KEY: ci-secret-encryption-key-32-bytes
+      ADLC_OPERATOR_EMAIL: operator@adlc.local
+      ADLC_OPERATOR_PASSWORD: ChangeMeOperatorPass1
+      ADLC_OPERATOR_DISPLAY_NAME: Operator
+      ADLC_WORKSPACE_NAME: ADLC workspace
+      ADLC_CONNECTOR_REGISTRATION_TOKEN: replace-with-registration-secret-min-24
+      ADLC_CONNECTOR_TOKEN: replace-with-one-time-connector-token-min-24
+      ADLC_SESSION_IDLE_SECONDS: "28800"
+      ADLC_SESSION_ABSOLUTE_SECONDS: "86400"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,3 +48,48 @@ jobs:
       - run: pnpm lint:openapi
       - run: pnpm db:migrate
       - run: pnpm ci
+
+  cockpit-002:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: adlc
+          POSTGRES_USER: adlc
+          POSTGRES_PASSWORD: adlc_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U adlc -d adlc"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://adlc:adlc_dev_password@localhost:5432/adlc
+      TEST_DATABASE_URL: postgres://adlc:adlc_dev_password@localhost:5432/adlc
+      OPENAI_API_KEY: test-openai-key
+      SECRET_ENCRYPTION_KEY: ci-secret-encryption-key-32-bytes
+      ADLC_OPERATOR_EMAIL: operator@adlc.local
+      ADLC_OPERATOR_PASSWORD: ChangeMeOperatorPass1
+      ADLC_OPERATOR_DISPLAY_NAME: Operator
+      ADLC_WORKSPACE_NAME: ADLC workspace
+      ADLC_CONNECTOR_REGISTRATION_TOKEN: replace-with-registration-secret-min-24
+      ADLC_CONNECTOR_TOKEN: replace-with-one-time-connector-token-min-24
+      ADLC_SESSION_IDLE_SECONDS: "28800"
+      ADLC_SESSION_ABSOLUTE_SECONDS: "86400"
+      ADLC_API_URL: http://127.0.0.1:3000/api/v1
+      ADLC_WORKSPACE_PATH: /tmp/adlc-workspace
+      OPENAI_EXECUTOR_API_KEY: test-executor-key
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test --project=cockpit-002

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable } from "@nestjs/common";
 import type { Agent, SessionStartRequest } from "@adlc/contracts";
 import { AgentRegistryService } from "../agent-registry/agent-registry.service.js";
 import { CapabilityRegistryService } from "../capability-registry/capability-registry.service.js";
@@ -7,8 +7,10 @@ import { WorkspaceEnvironmentService } from "../workspace-environment/workspace-
 @Injectable()
 export class SessionReadinessService {
   constructor(
-    private readonly agentRegistryService: AgentRegistryService,
+    @Inject(AgentRegistryService) private readonly agentRegistryService: AgentRegistryService,
+    @Inject(CapabilityRegistryService)
     private readonly capabilityRegistryService: CapabilityRegistryService,
+    @Inject(WorkspaceEnvironmentService)
     private readonly workspaceEnvironmentService: WorkspaceEnvironmentService,
   ) {}
 

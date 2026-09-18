@@ -18,6 +18,7 @@
     "@types/node": "catalog:",
     "tsx": "^4.20.5",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@adlc/test-support": "workspace:*"
   }
 }

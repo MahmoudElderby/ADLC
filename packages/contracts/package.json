@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint:openapi": "spectral lint ../../specs/001-r0-agent-fleet-skeleton/contracts/openapi.yaml",
+    "lint:openapi": "spectral lint ../../specs/002-cockpit-shell-capabilities/contracts/openapi.yaml",
     "test:schemas": "vitest run --project contracts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --project contracts"

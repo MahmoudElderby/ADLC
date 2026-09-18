@@ -9,17 +9,39 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { isNull } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 
 export const validationStatus = pgEnum("validation_status", [
   "pending_validation",
   "valid",
   "invalid",
   "unreachable",
+  "unverified",
 ]);
 
 export const connectorStatus = pgEnum("connector_status", ["offline", "online", "degraded"]);
 export const auditOutcome = pgEnum("audit_outcome", ["succeeded", "failed"]);
+export const authenticatedSessionStatus = pgEnum("authenticated_session_status", [
+  "active",
+  "revoked",
+  "expired",
+]);
+export const mcpReachabilityStatus = pgEnum("mcp_reachability_status", [
+  "unverified",
+  "reachable",
+  "unreachable",
+]);
+export const environmentCheckType = pgEnum("environment_check_type", [
+  "mcp_reachability",
+  "environment_health",
+]);
+export const environmentCheckStatus = pgEnum("environment_check_status", [
+  "pending",
+  "claimed",
+  "answered",
+  "expired",
+  "rejected",
+]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -137,3 +159,84 @@ export const appendOnlyAudit = pgTable("append_only_audit_marker", {
   id: uuid("id").primaryKey().defaultRandom(),
   updateDeleteApiExposed: boolean("update_delete_api_exposed").notNull().default(false),
 });
+
+export const workspaceUsers = pgTable(
+  "workspace_users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    displayName: text("display_name").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    emailLowerUnique: uniqueIndex("workspace_users_email_lower_idx").on(sql`lower(${table.email})`),
+    onePerWorkspace: uniqueIndex("workspace_users_one_per_workspace_idx").on(table.workspaceId),
+  }),
+);
+
+export const authenticatedSessions = pgTable(
+  "authenticated_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => workspaceUsers.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    status: authenticatedSessionStatus("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => ({
+    tokenHashUnique: uniqueIndex("authenticated_sessions_token_hash_idx").on(table.tokenHash),
+    userStatusExpiryIdx: index("authenticated_sessions_user_status_expires_idx").on(
+      table.userId,
+      table.status,
+      table.expiresAt,
+    ),
+  }),
+);
+
+export const environmentChecks = pgTable(
+  "environment_checks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    connectorId: uuid("connector_id")
+      .notNull()
+      .references(() => workspaceConnectors.id, { onDelete: "cascade" }),
+    checkType: environmentCheckType("check_type").notNull(),
+    targetCapabilityId: uuid("target_capability_id"),
+    status: environmentCheckStatus("status").notNull().default("pending"),
+    payloadRedactedJson: jsonb("payload_redacted_json").notNull().default({}),
+    resultRedactedJson: jsonb("result_redacted_json"),
+    correlationId: uuid("correlation_id").notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    answeredAt: timestamp("answered_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    connectorStatusRequestedIdx: index("environment_checks_connector_status_requested_idx").on(
+      table.connectorId,
+      table.status,
+      table.requestedAt,
+    ),
+    targetRequestedIdx: index("environment_checks_target_requested_idx").on(
+      table.targetCapabilityId,
+      table.requestedAt,
+    ),
+  }),
+);

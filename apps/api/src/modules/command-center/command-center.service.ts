@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { LiveFleetItem, SessionHistoryItem } from "@adlc/contracts";
 import { ArtifactService } from "../observability-governance/artifact.service.js";
 import { AuditService } from "../observability-governance/audit.service.js";
@@ -9,11 +9,11 @@ import { LiveFleetProjector } from "./live-fleet-projector.js";
 @Injectable()
 export class CommandCenterService {
   constructor(
-    private readonly sessions: SessionService,
-    private readonly events: SessionEventService,
-    private readonly artifacts: ArtifactService,
-    private readonly audits: AuditService,
-    private readonly projector?: LiveFleetProjector,
+    @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SessionEventService) private readonly events: SessionEventService,
+    @Inject(ArtifactService) private readonly artifacts: ArtifactService,
+    @Inject(AuditService) private readonly audits: AuditService,
+    @Optional() @Inject(LiveFleetProjector) private readonly projector?: LiveFleetProjector,
   ) {}
 
   async getLiveFleet(workspaceId: string): Promise<LiveFleetItem[]> {

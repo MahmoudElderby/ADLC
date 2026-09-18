@@ -15,7 +15,10 @@
     "db:generate": "pnpm --filter @adlc/database db:generate",
     "db:migrate": "pnpm --filter @adlc/database db:migrate",
     "lint": "eslint .",
-    "lint:openapi": "spectral lint specs/001-r0-agent-fleet-skeleton/contracts/openapi.yaml",
+    "lint:openapi": "spectral lint specs/002-cockpit-shell-capabilities/contracts/openapi.yaml",
+    "test:contract": "vitest run --project api apps/api/test/contract",
+    "test:integration": "vitest run --project api apps/api/test/integration",
+    "test:e2e:cockpit": "playwright test --project=cockpit-002",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
@@ -35,6 +38,11 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
+    "@swc/core": "catalog:",
+    "unplugin-swc": "catalog:",
     "vitest": "catalog:"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "argon2", "@swc/core"]
   }
 }

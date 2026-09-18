@@ -75,9 +75,9 @@ export class SessionEventService {
 
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly sessionService: SessionService,
-    private readonly redactionService: RedactionService,
-    private readonly artifactService: ArtifactService,
+    @Inject(SessionService) private readonly sessionService: SessionService,
+    @Inject(RedactionService) private readonly redactionService: RedactionService,
+    @Inject(ArtifactService) private readonly artifactService: ArtifactService,
     @Optional() @Inject(DATABASE_POOL) private readonly pool?: pg.Pool,
   ) {}
 

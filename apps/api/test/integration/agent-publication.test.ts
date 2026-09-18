@@ -8,22 +8,31 @@ import { WorkspaceBootstrap } from "../../src/platform/database/workspace-bootst
 import { RedactionService } from "../../src/platform/security/redaction.service.js";
 import { SecretVaultService } from "../../src/platform/security/secret-vault.service.js";
 import { OpenAIAgentsAdapter } from "../../src/integrations/openai/openai-agents.adapter.js";
-import { getSharedTestPostgres } from "@adlc/test-support";
+import { getSharedTestPostgres, seedOperator } from "@adlc/test-support";
+import { EnvironmentProbeService } from "../../src/modules/workspace-environment/environment-probe.service.js";
+import { EnvironmentCheckService } from "../../src/modules/workspace-environment/environment-check.service.js";
+import { AgentAttachmentQuery } from "../../src/modules/agent-registry/agent-attachment.query.js";
+import { forceMcpStatus } from "./support/us2-fixtures.js";
 
 async function createReadyServices() {
   const postgres = await getSharedTestPostgres();
   const redaction = new RedactionService();
+  const vault = new SecretVaultService();
   const bootstrap = new WorkspaceBootstrap(
     postgres.db,
-    new SecretVaultService("test-root-key-that-is-definitely-32-bytes"),
+    vault,
     redaction,
   );
-  const audit = new AuditService(new AuditRepository(postgres.db), redaction);
+  const audit = new AuditService(new AuditRepository(postgres.db), redaction, postgres.db);
   const capabilities = new CapabilityRegistryService(
     postgres.db,
-    bootstrap,
     new ConnectorCommandService(),
+    new EnvironmentProbeService(postgres.db),
     audit,
+    vault,
+    redaction,
+    new EnvironmentCheckService(postgres.db, vault, audit),
+    new AgentAttachmentQuery(postgres.db),
   );
   const agents = new AgentRegistryService(
     postgres.db,
@@ -33,8 +42,11 @@ async function createReadyServices() {
     redaction,
     new OpenAIAgentsAdapter(),
   );
-  const workspaceId = crypto.randomUUID();
-  const actorId = crypto.randomUUID();
+  const operator = await seedOperator(postgres, {
+    email: `op-${crypto.randomUUID()}@adlc.local`,
+  });
+  const workspaceId = operator.workspaceId;
+  const actorId = operator.operatorId;
   const skill = await capabilities.registerSkill(workspaceId, actorId, {
     name: "planning",
     description: "Planning skill",
@@ -50,10 +62,11 @@ async function createReadyServices() {
     connectionOrigin: "environment",
     allowedTools: ["create_work_item"],
     required: true,
-    credentialSecretId: null,
+    credential: "test-mcp-credential",
   });
   await capabilities.validateSkill(workspaceId, skill.id);
-  await capabilities.validateMcp(workspaceId, mcp.id);
+  await capabilities.validateMcp(workspaceId, actorId, mcp.id);
+  await forceMcpStatus(postgres.db, workspaceId, mcp.id, "valid");
   return { agents, workspaceId, actorId, skill, mcp };
 }
 

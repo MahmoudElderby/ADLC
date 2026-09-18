@@ -3,11 +3,15 @@ import { z } from "zod";
 export const uuidSchema = z.string().uuid();
 export const dateTimeSchema = z.string().datetime({ offset: true });
 
+export const skillValidationStatusSchema = z.enum(["pending_validation", "valid", "invalid"]);
+export const mcpReachabilityStatusSchema = z.enum(["unverified", "reachable", "unreachable"]);
+
 export const capabilityStatusSchema = z.enum([
   "pending_validation",
   "valid",
   "invalid",
   "unreachable",
+  "unverified",
 ]);
 
 export const connectorStatusSchema = z.enum(["offline", "online", "degraded"]);
@@ -40,3 +44,5 @@ export function paginatedResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {
 }
 
 export type ProblemDetails = z.infer<typeof problemDetailsSchema>;
+export type SkillValidationStatus = z.infer<typeof skillValidationStatusSchema>;
+export type McpReachabilityStatus = z.infer<typeof mcpReachabilityStatusSchema>;

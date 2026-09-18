@@ -1,6 +1,13 @@
 # UI Shell Contract — Slice 002
 
-Binding visual and interaction contract. Numeric values and tokens come from `docs/07-frontend-ui-guidelines.md`. This file maps them onto the screens this slice actually ships.
+Binding visual and interaction contract. Geometry and product rules come from
+`docs/07-frontend-ui-guidelines.md`. Tokens, typography, component recipes, and
+motion come from `apps/Debate AI SDLC Command Center UI/DESIGN_SYSTEM.md` and
+`apps/Debate AI SDLC Command Center UI/src/DesignSystem.tsx`. This file maps
+them onto the screens this slice actually ships.
+
+Constitution Principle VII: CSS variables or column widths without those
+primitives are not compliance. Production chrome lives in `@adlc/ui`.
 
 ## Shell geometry
 
@@ -60,9 +67,26 @@ Live validation updates while the user types (SC-008: visible within 1 second). 
 
 States: expanded, collapsed, hidden. Choice persists in `localStorage` across navigation and reload. The panel body is an empty operational region with no conversation, no composer, and no fake messages. A context strip may show the current area/entity name.
 
-## Visual tokens
+## Visual tokens and primitives
 
-Use the guideline graphite palette and status families only. Human-facing copy: Inter (or equivalent). Machine-facing metadata (ids, versions, URLs, tool names, timestamps, JSON preview): JetBrains Mono (or equivalent). Cyan is the only interactive accent. Purple is not used.
+Use the graphite palette and status families from `DESIGN_SYSTEM.md` only.
+Human-facing copy: Inter. Machine-facing metadata (ids, versions, URLs, tool
+names, timestamps, JSON preview): JetBrains Mono. Cyan is the only interactive
+accent. Purple is not used.
+
+Every shipped screen in this slice MUST use the `@adlc/ui` primitives that
+mirror `DesignSystem.tsx`:
+
+| Surface | Required recipe |
+|---|---|
+| Navigation rail | Icon-only items from the `I` catalog, cyan when active, `aria-label` for the area name |
+| Entity column | ALL-CAPS header, `+` create action, StatusDot + title + metadata rows, selected row cyan left border |
+| Workspace / creation header | StatusDot, entity name, ID chip, primary/secondary/danger buttons |
+| Forms | Field + FormSection, shared input base, live validation panel, monospace JSON preview |
+| Assistant | Expanded 320px / collapsed 40px icon strip / hidden; no fake conversation |
+| Sign-in | Same tokens and Field/button recipes, outside the shell |
+
+Inline `style` objects MUST NOT encode static design tokens.
 
 Status mapping for this slice is in `research.md` section 8.
 

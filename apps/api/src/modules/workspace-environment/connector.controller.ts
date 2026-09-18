@@ -3,47 +3,149 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Inject,
   NotFoundException,
   Param,
   Post,
   Query,
+  Res,
   UnauthorizedException,
 } from "@nestjs/common";
+import type { FastifyReply } from "fastify";
 import { sessionRuntimeSecrets, workspaceConnectorCommands, workspaceConnectors } from "@adlc/database";
 import { and, eq } from "drizzle-orm";
+import { timingSafeEqual } from "node:crypto";
+import { Public } from "../../platform/auth/public.decorator.js";
 import { DATABASE, type Database } from "../../platform/database/database.module.js";
 import { SecretVaultService } from "../../platform/security/secret-vault.service.js";
 import { ConnectorAuthService } from "./connector-auth.service.js";
+import { EnvironmentCheckService } from "./environment-check.service.js";
 import { WorkspaceEnvironmentService } from "./workspace-environment.service.js";
+import { WorkspaceBootstrap } from "../../platform/database/workspace-bootstrap.js";
 
+@Public()
 @Controller("connectors")
 export class ConnectorController {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly connectorAuth: ConnectorAuthService,
-    private readonly workspaceEnvironment: WorkspaceEnvironmentService,
-    private readonly secretVault: SecretVaultService,
+    @Inject(ConnectorAuthService) private readonly connectorAuth: ConnectorAuthService,
+    @Inject(WorkspaceEnvironmentService) private readonly workspaceEnvironment: WorkspaceEnvironmentService,
+    @Inject(SecretVaultService) private readonly secretVault: SecretVaultService,
+    @Inject(EnvironmentCheckService) private readonly environmentChecks: EnvironmentCheckService,
+    @Inject(WorkspaceBootstrap) private readonly bootstrap: WorkspaceBootstrap,
   ) {}
 
+  @Post("register")
+  async register(
+    @Headers("authorization") authorization: string | undefined,
+    @Body()
+    body: {
+      name?: string;
+      hostFingerprint?: string;
+      connectorVersion?: string;
+      platform?: string;
+      workspacePath?: string;
+    },
+  ) {
+    this.requireRegistrationSecret(authorization);
+    const graph = await this.bootstrap.ensurePlatformWorkspace();
+    const token = this.connectorAuth.issueToken();
+    const tokenHash = this.connectorAuth.hashToken(token);
+    const [existing] = await this.db
+      .select()
+      .from(workspaceConnectors)
+      .where(eq(workspaceConnectors.workspaceId, graph.workspaceId))
+      .limit(1);
+
+    let connectorId = existing?.id;
+    if (existing) {
+      await this.db
+        .update(workspaceConnectors)
+        .set({
+          name: body.name ?? existing.name,
+          hostFingerprint: body.hostFingerprint ?? existing.hostFingerprint,
+          version: body.connectorVersion ?? existing.version,
+          authTokenHash: tokenHash,
+          status: "offline",
+        })
+        .where(eq(workspaceConnectors.id, existing.id));
+    } else {
+      const [created] = await this.db
+        .insert(workspaceConnectors)
+        .values({
+          workspaceId: graph.workspaceId,
+          name: body.name ?? "self-hosted-connector",
+          authTokenHash: tokenHash,
+          hostFingerprint: body.hostFingerprint ?? "unregistered",
+          status: "offline",
+          version: body.connectorVersion ?? "0.2.0",
+          capabilitiesJson: { filesystem: true, network: true },
+          lastHeartbeatAt: null,
+        })
+        .returning();
+      connectorId = created.id;
+    }
+
+    return {
+      connectorId,
+      token,
+      workspaceId: graph.workspaceId,
+    };
+  }
+
   @Post(":connectorId/heartbeat")
+  @HttpCode(200)
   async heartbeat(
     @Param("connectorId") connectorId: string,
     @Headers("authorization") authorization: string | undefined,
-    @Body() body: { connectorVersion?: string; hostFingerprint?: string },
+    @Body()
+    body: {
+      connectorVersion?: string;
+      hostFingerprint?: string;
+      platform?: string;
+      observedAt?: string;
+      workspace?: { readable?: boolean; writable?: boolean };
+      activeExecutors?: number;
+    },
   ) {
-    const connector = await this.requireConnector(connectorId, authorization);
-    await this.db
-      .update(workspaceConnectors)
-      .set({
-        status: "online",
-        version: body.connectorVersion ?? connector.version,
-        hostFingerprint: body.hostFingerprint ?? connector.hostFingerprint,
-        lastHeartbeatAt: new Date(),
-      })
-      .where(eq(workspaceConnectors.id, connectorId));
-    await this.workspaceEnvironment.validate(connector.workspaceId);
+    await this.requireConnector(connectorId, authorization);
+    await this.workspaceEnvironment.recordHeartbeat(connectorId, {
+      connectorVersion: body.connectorVersion,
+      hostFingerprint: body.hostFingerprint,
+      workspace: body.workspace,
+      observedAt: body.observedAt,
+    });
     return { ok: true, revalidate: false };
+  }
+
+  @Get(":connectorId/checks/next")
+  async nextCheck(
+    @Param("connectorId") connectorId: string,
+    @Headers("authorization") authorization: string | undefined,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Query("waitSeconds") waitSecondsRaw?: string,
+  ) {
+    await this.requireConnector(connectorId, authorization);
+    const waitSeconds = Math.min(Math.max(Number(waitSecondsRaw ?? 0) || 0, 0), 25);
+    const check = await this.environmentChecks.nextCheck(connectorId, waitSeconds);
+    if (!check) {
+      reply.code(204);
+      return;
+    }
+    return check;
+  }
+
+  @Post(":connectorId/checks/:checkId/result")
+  @HttpCode(200)
+  async reportCheckResult(
+    @Param("connectorId") connectorId: string,
+    @Param("checkId") checkId: string,
+    @Headers("authorization") authorization: string | undefined,
+    @Body() body: Parameters<EnvironmentCheckService["reportResult"]>[2],
+  ) {
+    await this.requireConnector(connectorId, authorization);
+    return this.environmentChecks.reportResult(connectorId, checkId, body);
   }
 
   @Get(":connectorId/commands/next")
@@ -135,6 +237,20 @@ export class ConnectorController {
       })
       .where(eq(workspaceConnectorCommands.id, commandId));
     return { ok: true };
+  }
+
+  private requireRegistrationSecret(authorization: string | undefined): void {
+    const expected = process.env.ADLC_CONNECTOR_REGISTRATION_TOKEN ?? "";
+    const provided = authorization?.replace(/^Bearer\s+/i, "") ?? "";
+    const expectedBuffer = Buffer.from(expected);
+    const providedBuffer = Buffer.from(provided);
+    if (
+      !expected ||
+      expectedBuffer.length !== providedBuffer.length ||
+      !timingSafeEqual(expectedBuffer, providedBuffer)
+    ) {
+      throw new UnauthorizedException("Connector registration secret is invalid.");
+    }
   }
 
   private async requireConnector(connectorId: string, authorization: string | undefined) {

@@ -1,10 +1,13 @@
-import { Controller, Get, Post } from "@nestjs/common";
+import { Controller, Get, Inject, Post } from "@nestjs/common";
 import { CurrentRequestContext, type RequestContext } from "../../platform/auth/request-context.js";
 import { WorkspaceEnvironmentService } from "./workspace-environment.service.js";
 
 @Controller("workspace-environment")
 export class WorkspaceEnvironmentController {
-  constructor(private readonly workspaceEnvironmentService: WorkspaceEnvironmentService) {}
+  constructor(
+    @Inject(WorkspaceEnvironmentService)
+    private readonly workspaceEnvironmentService: WorkspaceEnvironmentService,
+  ) {}
 
   @Get()
   getEnvironment(@CurrentRequestContext() context: RequestContext) {

@@ -25,7 +25,7 @@ describe("security redaction", () => {
   });
 
   it("does not expose encrypted secret plaintext through redacted reads", () => {
-    const vault = new SecretVaultService("test-root-key-that-is-definitely-32-bytes");
+    const vault = new SecretVaultService();
     const encrypted = vault.encrypt("canary-secret-value");
     const redacted = vault.readRedacted(encrypted);
 

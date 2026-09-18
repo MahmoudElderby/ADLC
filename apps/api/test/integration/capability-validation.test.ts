@@ -1,34 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { CapabilityRegistryService } from "../../src/modules/capability-registry/capability-registry.service.js";
+import { AgentAttachmentQuery } from "../../src/modules/agent-registry/agent-attachment.query.js";
 import { AuditRepository } from "../../src/modules/observability-governance/audit.repository.js";
 import { AuditService } from "../../src/modules/observability-governance/audit.service.js";
 import { ConnectorCommandService } from "../../src/modules/workspace-environment/connector-command.service.js";
-import { WorkspaceBootstrap } from "../../src/platform/database/workspace-bootstrap.js";
+import { EnvironmentCheckService } from "../../src/modules/workspace-environment/environment-check.service.js";
+import { EnvironmentProbeService } from "../../src/modules/workspace-environment/environment-probe.service.js";
 import { RedactionService } from "../../src/platform/security/redaction.service.js";
 import { SecretVaultService } from "../../src/platform/security/secret-vault.service.js";
-import { getSharedTestPostgres } from "@adlc/test-support";
+import { getSharedTestPostgres, seedOperator } from "@adlc/test-support";
 
 async function createService() {
   const postgres = await getSharedTestPostgres();
+  const operator = await seedOperator(postgres, {
+    email: `op-${crypto.randomUUID()}@adlc.local`,
+  });
   const redaction = new RedactionService();
-  const bootstrap = new WorkspaceBootstrap(
+  const vault = new SecretVaultService();
+  const audit = new AuditService(new AuditRepository(postgres.db), redaction, postgres.db);
+  const service = new CapabilityRegistryService(
     postgres.db,
-    new SecretVaultService("test-root-key-that-is-definitely-32-bytes"),
-    redaction,
-  );
-  return new CapabilityRegistryService(
-    postgres.db,
-    bootstrap,
     new ConnectorCommandService(),
-    new AuditService(new AuditRepository(postgres.db), redaction),
+    new EnvironmentProbeService(postgres.db),
+    audit,
+    vault,
+    redaction,
+    new EnvironmentCheckService(postgres.db, vault, audit),
+    new AgentAttachmentQuery(postgres.db),
   );
+  return { service, workspaceId: operator.workspaceId, actorId: operator.operatorId };
 }
 
 describe("capability validation", () => {
   it("enforces skill name/version and MCP label uniqueness", async () => {
-    const service = await createService();
-    const workspaceId = crypto.randomUUID();
-    const actorId = crypto.randomUUID();
+    const { service, workspaceId, actorId } = await createService();
     await service.registerSkill(workspaceId, actorId, {
       name: "planning",
       description: "Planning skill",
@@ -56,7 +61,7 @@ describe("capability validation", () => {
       connectionOrigin: "environment",
       allowedTools: ["create_work_item"],
       required: true,
-      credentialSecretId: null,
+      credential: "test-mcp-credential",
     });
 
     await expect(
@@ -67,15 +72,13 @@ describe("capability validation", () => {
         connectionOrigin: "environment",
         allowedTools: ["create_work_item"],
         required: true,
-        credentialSecretId: null,
+        credential: "test-mcp-credential",
       }),
     ).rejects.toThrow();
   });
 
-  it("records validation status for connector-origin reachability", async () => {
-    const service = await createService();
-    const workspaceId = crypto.randomUUID();
-    const actorId = crypto.randomUUID();
+  it("does not invent MCP reachability from hostname heuristics", async () => {
+    const { service, workspaceId, actorId } = await createService();
     const mcp = await service.registerMcp(workspaceId, actorId, {
       label: "private-devops",
       serverUrl: "https://unreachable.example.test/mcp",
@@ -83,11 +86,11 @@ describe("capability validation", () => {
       connectionOrigin: "environment",
       allowedTools: ["create_work_item"],
       required: true,
-      credentialSecretId: null,
+      credential: "test-mcp-credential",
     });
 
-    const validated = await service.validateMcp(workspaceId, mcp.id);
-    expect(validated.status).toBe("unreachable");
-    expect(validated.validationSummary).toContain("workspace");
+    const validated = await service.validateMcp(workspaceId, actorId, mcp.id);
+    expect(validated.reachabilityStatus).toBe("unverified");
+    expect(validated.reachabilitySummary?.toLowerCase()).toContain("unverified");
   });
 });

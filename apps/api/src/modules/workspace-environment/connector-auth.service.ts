@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 export type ConnectorCommandEnvelope = {
   commandId: string;
@@ -15,8 +15,8 @@ export class ConnectorAuthService {
     return randomBytes(32).toString("base64url");
   }
 
-  hashToken(token: string, salt = process.env.CONNECTOR_TOKEN_SALT ?? "adlc-dev-salt"): string {
-    return createHmac("sha256", salt).update(token).digest("hex");
+  hashToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
   }
 
   verifyToken(token: string, expectedHash: string): void {

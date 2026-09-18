@@ -17,8 +17,8 @@ export type ArtifactReportInput = {
 export class ArtifactService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly redactionService: RedactionService,
-    private readonly connectorCommandService: ConnectorCommandService,
+    @Inject(RedactionService) private readonly redactionService: RedactionService,
+    @Inject(ConnectorCommandService) private readonly connectorCommandService: ConnectorCommandService,
   ) {}
 
   async recordArtifactReport(session: Session, input: ArtifactReportInput): Promise<Artifact> {

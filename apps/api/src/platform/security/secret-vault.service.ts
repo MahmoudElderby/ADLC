@@ -11,11 +11,8 @@ export type EncryptedSecret = {
 export class SecretVaultService {
   private readonly algorithm = "aes-256-gcm";
   private readonly keyVersion = "v1";
-
-  constructor(
-    private readonly rootKey = process.env.SECRET_ENCRYPTION_KEY ??
-      "development-key-minimum-32-bytes!!",
-  ) {}
+  private readonly rootKey =
+    process.env.SECRET_ENCRYPTION_KEY ?? "development-key-minimum-32-bytes!!";
 
   encrypt(plaintext: string): EncryptedSecret {
     const iv = randomBytes(12);

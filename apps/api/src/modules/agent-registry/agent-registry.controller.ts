@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Patch, Post } from "@nestjs/common";
 import type { CreateAgentRequest } from "@adlc/contracts";
 import { CurrentRequestContext, type RequestContext } from "../../platform/auth/request-context.js";
 import { AgentRegistryService } from "./agent-registry.service.js";
 
 @Controller("agents")
 export class AgentRegistryController {
-  constructor(private readonly agentRegistryService: AgentRegistryService) {}
+  constructor(@Inject(AgentRegistryService) private readonly agentRegistryService: AgentRegistryService) {}
 
   @Get()
   listAgents(@CurrentRequestContext() context: RequestContext) {

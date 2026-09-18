@@ -31,6 +31,7 @@ Expected processes:
 - API under `/api/v1`
 - PostgreSQL accepting the migrated schema including 002 identity, reachability, and environment-check tables
 - Workspace connector looping on heartbeat and `checks/next` (not executor commands)
+- Vite same-origin `/api` proxy so `adlc_session` is first-party
 
 Confirm `GET /health` is unauthenticated and `GET /api/v1/capabilities/skills` without a cookie returns 401 with no skill data.
 
@@ -46,6 +47,33 @@ Open the app signed out. Sign in with the pre-provisioned operator. The shell mu
 4. Stop the connector. Register another MCP. Reachability is `unverified`, not guessed.
 5. Using the seeded published-agent fixture from test/demo setup, attempt to delete a referenced capability; it is refused and the agent is named.
 
+## Demo step 19 — inspect the stored secret
+
+```sql
+SELECT id, fingerprint, left(encrypted_value, 32)
+FROM workspace_secrets
+WHERE type = 'mcp_credential'
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+`encrypted_value` must not equal the pasted credential. `fingerprint` is a non-reversible identifier.
+
+## Demo step 23a — attach the saved MCP to the seeded published agent
+
+There is no Agent Registry UI in this slice. After the MCP from demo step 16 exists, attach it with SQL (or `attachCapabilityToSeededAgent` from `@adlc/test-support` in automated tests):
+
+```sql
+INSERT INTO agent_capability_attachments (agent_version_id, capability_type, capability_id, required)
+SELECT a.current_published_version_id, 'mcp_server', m.id, true
+FROM agents a
+JOIN mcp_servers m ON m.workspace_id = a.workspace_id
+WHERE a.name = 'Seeded published agent'
+  AND m.label = '<label-from-step-16>';
+```
+
+Then attempt delete in the UI (demo step 24). The UI must name the seeded published agent and leave the MCP in place.
+
 ## Automated Validation
 
 ```powershell
@@ -56,7 +84,7 @@ pnpm typecheck
 pnpm test
 pnpm test:integration
 pnpm test:contract
-pnpm test:e2e -- tests/e2e/cockpit-capabilities.spec.ts
+pnpm exec playwright test --project=cockpit-002
 ```
 
 `tests/e2e/cockpit-capabilities.spec.ts` is the Principle VI path. It must:

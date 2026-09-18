@@ -4,9 +4,10 @@ import { CapabilityRegistryModule } from "../capability-registry/capability-regi
 import { ObservabilityGovernanceModule } from "../observability-governance/observability-governance.module.js";
 import { AgentRegistryController } from "./agent-registry.controller.js";
 import { AgentRegistryService } from "./agent-registry.service.js";
+import { AgentAttachmentQueryModule } from "./agent-attachment-query.module.js";
 
 @Module({
-  imports: [CapabilityRegistryModule, ObservabilityGovernanceModule],
+  imports: [CapabilityRegistryModule, ObservabilityGovernanceModule, AgentAttachmentQueryModule],
   controllers: [AgentRegistryController],
   providers: [AgentRegistryService, OpenAIAgentsAdapter],
   exports: [AgentRegistryService],

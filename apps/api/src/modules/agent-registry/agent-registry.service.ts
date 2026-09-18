@@ -19,11 +19,12 @@ import { CapabilityRegistryService } from "../capability-registry/capability-reg
 export class AgentRegistryService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly bootstrap: WorkspaceBootstrap,
+    @Inject(WorkspaceBootstrap) private readonly bootstrap: WorkspaceBootstrap,
+    @Inject(CapabilityRegistryService)
     private readonly capabilityRegistryService: CapabilityRegistryService,
-    private readonly auditService: AuditService,
-    private readonly redactionService: RedactionService,
-    private readonly openaiGateway: OpenAIAgentsAdapter,
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(RedactionService) private readonly redactionService: RedactionService,
+    @Inject(OpenAIAgentsAdapter) private readonly openaiGateway: OpenAIAgentsAdapter,
   ) {}
 
   async listAgents(workspaceId: string): Promise<Agent[]> {

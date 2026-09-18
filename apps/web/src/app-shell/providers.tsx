@@ -1,18 +1,20 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type PropsWithChildren, useState } from "react";
 import { create } from "zustand";
+import type { CurrentIdentity } from "@adlc/contracts";
+import { ApiRequestError } from "../lib/api.js";
 
-type WorkspaceState = {
-  workspaceId: string;
-  actorId: string;
-  setWorkspaceId: (workspaceId: string) => void;
+type IdentityState = {
+  identity: CurrentIdentity | null;
+  setIdentity: (identity: CurrentIdentity | null) => void;
 };
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  workspaceId: "00000000-0000-4000-8000-000000000001",
-  actorId: "00000000-0000-4000-8000-000000000002",
-  setWorkspaceId: (workspaceId) => set({ workspaceId }),
+export const useIdentityStore = create<IdentityState>((set) => ({
+  identity: null,
+  setIdentity: (identity) => set({ identity }),
 }));
+
+export const useWorkspaceStore = useIdentityStore;
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -20,8 +22,16 @@ export function AppProviders({ children }: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: 1,
+            retry: (failureCount, error) => {
+              if (error instanceof ApiRequestError && (error.status === 401 || error.status === 403)) {
+                return false;
+              }
+              return failureCount < 1;
+            },
             staleTime: 10_000,
+          },
+          mutations: {
+            retry: false,
           },
         },
       }),

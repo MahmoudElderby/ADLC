@@ -10,10 +10,11 @@ export function WorkspaceHealthPanel({ health }: { health?: WorkspaceHealth }) {
   });
   const value = health ??
     remote.data ?? {
-      status: "healthy" as const,
-      connector: "online" as const,
-      filesystem: "healthy" as const,
-      executor: "available" as const,
+      status: "unavailable" as const,
+      connector: "offline" as const,
+      canProbeReachability: false,
+      filesystem: "unknown" as const,
+      executor: "unknown" as const,
       checkedAt: new Date().toISOString(),
       issues: [],
     };

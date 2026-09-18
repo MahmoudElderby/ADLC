@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Param, Query } from "@nestjs/common";
 import { CurrentRequestContext, type RequestContext } from "../../platform/auth/request-context.js";
 import { CommandCenterService } from "./command-center.service.js";
 import { TraceService } from "../observability-governance/trace.service.js";
@@ -6,8 +6,8 @@ import { TraceService } from "../observability-governance/trace.service.js";
 @Controller()
 export class CommandCenterController {
   constructor(
-    private readonly commandCenter: CommandCenterService,
-    private readonly trace: TraceService,
+    @Inject(CommandCenterService) private readonly commandCenter: CommandCenterService,
+    @Inject(TraceService) private readonly trace: TraceService,
   ) {}
   @Get("dashboard/live-fleet") getLiveFleet(@CurrentRequestContext() context: RequestContext) {
     return this.commandCenter.getLiveFleet(context.workspaceId);

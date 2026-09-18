@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-bg: #0A0B0D;
+  --color-panel: #13151A;
+  --color-panel-2: #1A1D24;
+  --color-border: #1E2129;
+  --color-border-2: #2A2F3A;
+  --color-cyan: #06B6D4;
+  --color-cyan-dim: #0891B2;
+  --color-cyan-glow: rgba(6, 182, 212, 0.15);
+  --color-text: #F1F5F9;
+  --color-muted: #8892A4;
+  --color-dim: #4A5568;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-purple: #8B5CF6;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #0A0B0D;
+  color: #F1F5F9;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2A2F3A; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #4A5568; }
+
+/* Selection */
+::selection { background: rgba(6, 182, 212, 0.25); color: #F1F5F9; }
+
+/* Canvas dot grid */
+.canvas-dot-grid {
+  background-image: radial-gradient(circle, #1E2129 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Scan line animation */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.25; }
+  90%  { opacity: 0.1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+.animate-scanline { animation: scanline 7s linear infinite; }
+
+/* Dash flow for SVG connector lines */
+@keyframes dashflow {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+.animate-dashflow { animation: dashflow 1.2s linear infinite; }
+
+/* Pulse ring for active nodes */
+@keyframes nodeRing {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.animate-node-ring { animation: nodeRing 2s ease-out infinite; }
+
+/* Amber pulse ring */
+@keyframes amberRing {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-amber-ring { animation: amberRing 2.4s ease-out infinite; }

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@adlc/database": "workspace:*",
+    "argon2": "catalog:",
     "drizzle-orm": "catalog:",
     "pg": "catalog:"
   },

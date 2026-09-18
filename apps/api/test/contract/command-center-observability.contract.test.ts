@@ -88,7 +88,7 @@ describe("Command Center and observability contracts", () => {
     const audits = auditResponseSchema.parse([
       {
         id,
-        actorId: id,
+        actor: { id, displayName: "Operator" },
         action: "session.started",
         entityType: "session",
         entityId: id,

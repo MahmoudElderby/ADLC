@@ -54,7 +54,7 @@ we can see end to end including the UI/UX."
 
 | # | Constitution requirement | Status | Gap |
 |---|---|---|---|
-| G1 | Frontend specs MUST comply with `docs/07-frontend-ui-guidelines.md`; screens MUST preserve the sliced workspace shell | **Violated** | No shell, no icon rail, no entity column, no chat panel, zero CSS files, zero design tokens. The mandated dark graphite palette and status semantics exist only in docs. |
+| G1 | Frontend specs MUST comply with `docs/07-frontend-ui-guidelines.md` and Constitution Principle VII (design system primitives) | **Open on 001 leftovers; 002 amended 2026-09-19** | Spec 002 delivered the sliced shell and tokens, then a visual amendment ports `DesignSystem.tsx` primitives into `@adlc/ui`. Spec 001 leftover screens remain unrouted and are not the visual contract. |
 | G2 | R0 MUST prove the reusable primitives, including **workflow orchestration**, **approvals**, and **platform chat** | **Not specified** | Spec 001 explicitly defers all three. No spec covers them, so three constitutional R0 primitives have no plan. |
 | G3 | Platform Chat MUST be a built-in ADLC-managed system agent | **Missing** | Docs only (`docs/modules/platform-chat.md`). |
 | G4 | R0 MUST use OpenAI Agents API as the execution substrate | **Faked** | `openai-agents.adapter.ts` and `openai-session.adapter.ts` return synthetic IDs and a `.example.test` URL. No outbound HTTP. |

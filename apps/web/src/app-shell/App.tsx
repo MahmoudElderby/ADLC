@@ -17,9 +17,9 @@ class ErrorBoundary extends Component<PropsWithChildren, { error?: Error }> {
   render(): ReactNode {
     if (this.state.error) {
       return (
-        <main role="alert" aria-live="assertive">
-          <h1>Something went wrong</h1>
-          <p>{this.state.error.message}</p>
+        <main role="alert" aria-live="assertive" className="flex min-h-screen flex-col items-center justify-center bg-[#0A0B0D] px-6 text-[#F1F5F9]">
+          <h1 className="text-sm font-semibold">Something went wrong</h1>
+          <p className="mt-2 font-mono text-[12px] text-[#8892A4]">{this.state.error.message}</p>
         </main>
       );
     }

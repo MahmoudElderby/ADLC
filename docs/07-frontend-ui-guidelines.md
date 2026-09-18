@@ -2,15 +2,25 @@
 
 ## Source
 
-These guidelines are distilled from the Figma Make export at:
+These guidelines are the durable product-level UI contract. They are distilled
+from the in-repo design system at:
 
 ```text
-C:\Users\MahmoudElderby\Downloads\Debate AI SDLC Command Center UI
+apps/Debate AI SDLC Command Center UI/DESIGN_SYSTEM.md
+apps/Debate AI SDLC Command Center UI/src/DesignSystem.tsx
+apps/Debate AI SDLC Command Center UI/src/index.css
 ```
 
-The export includes a React/Vite prototype, `DESIGN_SYSTEM.md`, and an app shell
-design prompt. Treat this document as the durable ADLC UI contract; the exported
-prototype is a reference artifact, not source code to copy wholesale.
+`DESIGN_SYSTEM.md` is the written specification. `DesignSystem.tsx` is the
+visual and component specification: tokens, StatusDot, Badge, Brackets, button
+variants, Field / FormSection, inputs, entity rows, workspace header, creation
+workspace, validation panel, and motion. Constitution Principle VII binds both.
+
+The prototype `App.tsx` is a composition example for later screens. Do not copy
+it wholesale as application source. Do port every primitive `DesignSystem.tsx`
+defines into `@adlc/ui`, and compose production pages from those primitives.
+
+Extracting only hex colors or shell widths is not compliance.
 
 ## Product Feel
 
@@ -265,11 +275,16 @@ Avoid broad animation primitives. Prefer targeted color or property transitions.
 
 ## Implementation Notes
 
-The reference artifact uses React, Vite, Tailwind CSS, and colocated prototype
-components. For ADLC implementation, keep the architecture decision in the main
-planning docs as the source of truth, but preserve these UI behaviors and visual
-rules.
+The design system uses React, Vite, and Tailwind CSS v4. Production code MUST
+use the same utility recipes as `DesignSystem.tsx`. Inline `style` objects MUST
+NOT encode static design tokens; use them only for dynamic or computed values.
+
+`@adlc/ui` is the production home for tokens, icons, StatusDot, Badge,
+Brackets, buttons, Field / FormSection, entity rows, workspace chrome, and the
+creation-workspace layout. `apps/web` owns routes, data fetching, and page
+composition only.
 
 Prefer production component organization over copying the prototype's single
-large `App.tsx`. Extract reusable shell, navigation, entity browser, form,
-badge, status, chat, and canvas components when implementation starts.
+large `App.tsx`. When a later slice adds a screen that already exists in the
+prototype, match its visual language by composing `@adlc/ui` primitives — do
+not restyle from scratch and do not invent a second component language.

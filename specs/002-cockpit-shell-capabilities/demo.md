@@ -12,6 +12,12 @@ reviewer must be able to follow this successfully before the feature is accepted
 - An MCP server address reachable **only** from the execution environment's
   private network, plus its credential, are available.
 - The workspace has no registered skills or MCP servers yet.
+- One published agent is seeded with **no** capability attachment, so the
+  registry is empty at step 9. The Agent Registry interface is slice 003; the
+  reviewer never touches an agent editor.
+- Before step 24, run the documented attach command in `quickstart.md` to attach
+  the capability you just saved to that seeded agent. Step 24 then deletes that
+  same capability.
 
 Nothing in this script may be performed against intercepted requests or
 substituted storage.
@@ -47,15 +53,16 @@ Step 15 is the step that spec 001 could not have passed.
 
 | Step | Action | What the reviewer must observe |
 |---|---|---|
-| 16 | Register the private-network MCP server with its label, address, allowed tools, connection origin, required flag, and credential reference | It is saved and its reachability resolves to reachable — proving the check ran from the execution environment, since the platform service alone could not reach it. |
+| 16 | Register the private-network MCP server with its label, address, allowed tools, connection origin, required flag, and paste the secret once | It is saved and its reachability resolves to reachable — proving Streamable HTTP `initialize` + `tools/list` ran from the execution environment, since the platform service alone could not reach it. Afterwards only the credential reference is shown. |
 | 17 | Look for the credential anywhere in the interface | Only the reference and its health appear. The value appears nowhere. |
 | 18 | Inspect the browser's network responses for this screen | No credential value in any response. |
-| 19 | Inspect the stored record directly | The credential is not readable in plain text. |
+| 19 | Inspect the stored record directly using the SQL in `quickstart.md` | The credential is not readable in plain text. |
 | 20 | Register a second MCP server reusing the first one's label | Refused, with the conflict identified. |
 | 21 | Register an MCP server at an unreachable address | Saved and reported unhealthy with an actionable reason. The record is not discarded. |
 | 22 | **Stop the execution environment**, then register another MCP server | Saved with reachability reported as **unverified**, with the reason shown — not guessed as healthy or unhealthy. |
 | 23 | Restart the execution environment and revalidate that server | Reachability resolves. |
-| 24 | Attempt to remove a capability that a published agent references | Refused, and the referencing agents are named. |
+| 23a | Run the documented attach command to attach the MCP from step 16 to the seeded published agent | The command succeeds. No agent editor is used. |
+| 24 | Attempt to remove the MCP from step 16 | Refused, and the referencing agents are named. |
 
 ## Acceptance signal
 

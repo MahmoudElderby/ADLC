@@ -8,7 +8,13 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { validationStatus, workspaceSecrets, workspaces } from "./foundation.js";
+import {
+  mcpReachabilityStatus,
+  validationStatus,
+  workspaceSecrets,
+  workspaceUsers,
+  workspaces,
+} from "./foundation.js";
 
 export const skills = pgTable(
   "skills",
@@ -29,6 +35,12 @@ export const skills = pgTable(
     status: validationStatus("status").notNull().default("pending_validation"),
     validationSummary: text("validation_summary"),
     validatedAt: timestamp("validated_at", { withTimezone: true }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => workspaceUsers.id),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => workspaceUsers.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -59,6 +71,15 @@ export const mcpServers = pgTable(
     status: validationStatus("status").notNull().default("pending_validation"),
     validationSummary: text("validation_summary"),
     validatedAt: timestamp("validated_at", { withTimezone: true }),
+    reachabilityStatus: mcpReachabilityStatus("reachability_status").notNull().default("unverified"),
+    reachabilitySummary: text("reachability_summary"),
+    reachabilityCheckedAt: timestamp("reachability_checked_at", { withTimezone: true }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => workspaceUsers.id),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => workspaceUsers.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

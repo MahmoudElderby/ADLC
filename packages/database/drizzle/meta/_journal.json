@@ -43,6 +43,13 @@
       "when": 1768700005000,
       "tag": "0006_convergence_alignment",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768700006000,
+      "tag": "0007_cockpit_identity_capabilities",
+      "breakpoints": true
     }
   ]
 }

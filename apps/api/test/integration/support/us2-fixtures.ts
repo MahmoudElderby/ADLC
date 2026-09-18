@@ -1,6 +1,6 @@
 import { mcpServers } from "@adlc/database";
 import { and, eq } from "drizzle-orm";
-import { getSharedTestPostgres, type SchemaDatabase } from "@adlc/test-support";
+import { getSharedTestPostgres, seedOperator, type SchemaDatabase } from "@adlc/test-support";
 import { OpenAIAgentsAdapter } from "../../../src/integrations/openai/openai-agents.adapter.js";
 import { OpenAISessionAdapter } from "../../../src/integrations/openai/openai-session.adapter.js";
 import { AgentRegistryService } from "../../../src/modules/agent-registry/agent-registry.service.js";
@@ -13,6 +13,9 @@ import { SessionEventService } from "../../../src/modules/session-runner/session
 import { SessionReadinessService } from "../../../src/modules/session-runner/session-readiness.service.js";
 import { SessionService } from "../../../src/modules/session-runner/session.service.js";
 import { ConnectorCommandService } from "../../../src/modules/workspace-environment/connector-command.service.js";
+import { EnvironmentCheckService } from "../../../src/modules/workspace-environment/environment-check.service.js";
+import { EnvironmentProbeService } from "../../../src/modules/workspace-environment/environment-probe.service.js";
+import { AgentAttachmentQuery } from "../../../src/modules/agent-registry/agent-attachment.query.js";
 import { WorkspaceEnvironmentService } from "../../../src/modules/workspace-environment/workspace-environment.service.js";
 import { WorkspaceBootstrap } from "../../../src/platform/database/workspace-bootstrap.js";
 import { RedactionService } from "../../../src/platform/security/redaction.service.js";
@@ -28,8 +31,11 @@ export async function forceMcpStatus(
   await db
     .update(mcpServers)
     .set({
-      status,
+      status: status === "unreachable" ? "invalid" : status,
+      reachabilityStatus:
+        status === "valid" ? "reachable" : status === "unreachable" ? "unreachable" : "unverified",
       validationSummary: "Forced test status.",
+      reachabilitySummary: "Forced test status.",
       validatedAt: new Date(),
     })
     .where(and(eq(mcpServers.id, mcpId), eq(mcpServers.workspaceId, workspaceId)));
@@ -37,19 +43,26 @@ export async function forceMcpStatus(
 
 export async function createReadyAgentFixture(options: { publish?: boolean } = {}) {
   const postgres = await getSharedTestPostgres();
-  const workspaceId = crypto.randomUUID();
-  const actorId = crypto.randomUUID();
+  const operator = await seedOperator(postgres, {
+    email: `op-${crypto.randomUUID()}@adlc.local`,
+  });
+  const workspaceId = operator.workspaceId;
+  const actorId = operator.operatorId;
   const redaction = new RedactionService();
   redaction.registerSecretCanary("sk-secret-12345678");
-  const vault = new SecretVaultService("test-root-key-that-is-definitely-32-bytes");
+  const vault = new SecretVaultService();
   const bootstrap = new WorkspaceBootstrap(postgres.db, vault, redaction);
-  const audit = new AuditService(new AuditRepository(postgres.db), redaction);
+  const audit = new AuditService(new AuditRepository(postgres.db), redaction, postgres.db);
   const connector = new ConnectorCommandService();
   const capabilityRegistryService = new CapabilityRegistryService(
     postgres.db,
-    bootstrap,
     connector,
+    new EnvironmentProbeService(postgres.db),
     audit,
+    vault,
+    redaction,
+    new EnvironmentCheckService(postgres.db, vault, audit),
+    new AgentAttachmentQuery(postgres.db),
   );
   const agentRegistryService = new AgentRegistryService(
     postgres.db,
@@ -62,8 +75,13 @@ export async function createReadyAgentFixture(options: { publish?: boolean } = {
   const workspaceEnvironmentService = new WorkspaceEnvironmentService(
     postgres.db,
     bootstrap,
-    connector,
   );
+  const environment = await workspaceEnvironmentService.getEnvironment(workspaceId);
+  await workspaceEnvironmentService.recordHeartbeat(environment.connectorId, {
+    connectorVersion: "0.2.0",
+    hostFingerprint: "test-host",
+    workspace: { readable: true, writable: true },
+  });
   const readiness = new SessionReadinessService(
     agentRegistryService,
     capabilityRegistryService,
@@ -107,10 +125,11 @@ export async function createReadyAgentFixture(options: { publish?: boolean } = {
     connectionOrigin: "environment",
     allowedTools: ["create_work_item"],
     required: true,
-    credentialSecretId: null,
+    credential: "test-mcp-credential",
   });
   await capabilityRegistryService.validateSkill(workspaceId, skill.id);
-  await capabilityRegistryService.validateMcp(workspaceId, mcp.id);
+  await capabilityRegistryService.validateMcp(workspaceId, actorId, mcp.id);
+  await forceMcpStatus(postgres.db, workspaceId, mcp.id, "valid");
 
   const draftAgent = await agentRegistryService.createDraft(workspaceId, actorId, {
     name: "Release planner",
