@@ -1,0 +1,9 @@
+{
+  "extends": "../../config/typescript/tsconfig.app.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

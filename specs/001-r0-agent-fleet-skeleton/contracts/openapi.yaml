@@ -1,0 +1,700 @@
+openapi: 3.1.0
+info:
+  title: ADLC R0 Walking Skeleton API
+  version: 0.1.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  description: >-
+    Workspace-scoped contract for registering capabilities, publishing an agent,
+    running a self-hosted session, and inspecting operational evidence.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+
+paths:
+  /workspace-environment:
+    get:
+      operationId: getWorkspaceEnvironment
+      summary: Get the self-hosted workspace configuration
+      tags: [Workspace Environment]
+      responses:
+        "200":
+          description: Current self-hosted workspace configuration, always redacted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceEnvironment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /workspace-environment/health:
+    get:
+      operationId: getWorkspaceEnvironmentHealth
+      summary: Get current workspace environment health
+      tags: [Workspace Environment]
+      responses:
+        "200":
+          description: Connector, filesystem, executor, and network health.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHealth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /workspace-environment/validate:
+    post:
+      operationId: validateWorkspaceEnvironment
+      summary: Validate the self-hosted workspace environment
+      tags: [Workspace Environment]
+      responses:
+        "200":
+          description: Completed validation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHealth"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /capabilities/skills:
+    get:
+      operationId: listSkills
+      summary: List registered skills
+      tags: [Capabilities]
+      responses:
+        "200":
+          description: Registered skills.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Skill"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: registerSkill
+      summary: Register a referenced skill
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterSkillRequest"
+      responses:
+        "201":
+          description: Skill registered pending or after validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /capabilities/skills/{skillId}/validate:
+    post:
+      operationId: validateSkill
+      summary: Validate a registered skill
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/SkillId"
+      responses:
+        "200":
+          description: Updated validation state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /capabilities/mcp:
+    get:
+      operationId: listMcpServers
+      summary: List registered MCP servers
+      tags: [Capabilities]
+      responses:
+        "200":
+          description: Registered MCP servers with redacted credential health.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/McpServer"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: registerMcpServer
+      summary: Register an environment-origin HTTP MCP server
+      tags: [Capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterMcpRequest"
+      responses:
+        "201":
+          description: MCP server registered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpServer"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /capabilities/mcp/{mcpId}/validate:
+    post:
+      operationId: validateMcpServer
+      summary: Validate MCP reachability from the workspace
+      tags: [Capabilities]
+      parameters:
+        - $ref: "#/components/parameters/McpId"
+      responses:
+        "200":
+          description: Reachability result measured from the workspace connector.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpServer"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /agents:
+    get:
+      operationId: listAgents
+      summary: List workspace agents
+      tags: [Agents]
+      responses:
+        "200":
+          description: Workspace agents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createAgentDraft
+      summary: Create an agent draft
+      tags: [Agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRequest"
+      responses:
+        "201":
+          description: Draft agent created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /agents/{agentId}:
+    get:
+      operationId: getAgent
+      summary: Get an agent and its current versions
+      tags: [Agents]
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      responses:
+        "200":
+          description: Agent detail and current draft/published versions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAgentDraft
+      summary: Update or stage an agent draft
+      tags: [Agents]
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRequest"
+      responses:
+        "200":
+          description: Draft updated or staged from a published agent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /agents/{agentId}/publish:
+    post:
+      operationId: publishAgent
+      summary: Validate and publish an agent
+      tags: [Agents]
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      responses:
+        "200":
+          description: Agent published and available for sessions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /sessions:
+    get:
+      operationId: listSessions
+      summary: List session history
+      tags: [Sessions]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/SessionStatus"
+      responses:
+        "200":
+          description: Session history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: startSession
+      summary: Start a session with a published agent
+      tags: [Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId, input]
+              properties:
+                agentId:
+                  type: string
+                  format: uuid
+                input:
+                  type: string
+                  minLength: 1
+                  maxLength: 50000
+      responses:
+        "202":
+          description: Local session created and provisioning started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /sessions/{sessionId}:
+    get:
+      operationId: getSession
+      summary: Get session details and snapshot summary
+      tags: [Sessions]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session detail with redacted snapshot summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /sessions/{sessionId}/cancel:
+    post:
+      operationId: cancelSession
+      summary: Cancel an active session
+      tags: [Sessions]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "202":
+          description: Cancellation accepted; session is terminally canceled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /sessions/{sessionId}/stream:
+    get:
+      operationId: streamSessionEvents
+      summary: Replay and stream normalized session events
+      tags: [Sessions]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - name: Last-Event-ID
+          in: header
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Normalized replay-then-live stream defined in sse-events.md.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /sessions/{sessionId}/trace:
+    get:
+      operationId: getSessionTrace
+      summary: Get the ordered session trace
+      tags: [Evidence]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - name: afterSequence
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Ordered normalized trace events.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TraceEvent"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /sessions/{sessionId}/artifacts:
+    get:
+      operationId: listSessionArtifacts
+      summary: List artifact report records for a session
+      tags: [Evidence]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Artifact report records; duplicate paths are permitted.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artifact"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /audit-log:
+    get:
+      operationId: listAuditLog
+      summary: List redacted audit entries
+      tags: [Evidence]
+      parameters:
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Append-only, redacted audit entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /dashboard/live-fleet:
+    get:
+      operationId: getLiveFleet
+      summary: Get active sessions for the live fleet canvas
+      tags: [Command Center]
+      responses:
+        "200":
+          description: Active sessions only; terminal sessions are excluded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LiveFleetItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: adlc_session
+
+  parameters:
+    SkillId:
+      name: skillId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    McpId:
+      name: mcpId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AgentId:
+      name: agentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Authentication is missing or invalid.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Resource does not exist in the authenticated workspace.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: Current state prevents the requested operation.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Request or domain validation failed.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    CapabilityStatus:
+      type: string
+      enum: [pending_validation, valid, invalid, unreachable]
+    SessionStatus:
+      type: string
+      enum: [creating, provisioning, running, completed, failed, canceled, interrupted]
+    WorkspaceEnvironment:
+      type: object
+      required: [id, type, workspacePath, connectorId, status]
+      properties:
+        id: { type: string, format: uuid }
+        type: { const: self_hosted }
+        workspacePath: { type: string }
+        connectorId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/CapabilityStatus" }
+        executorCredentialHealth: { type: string, enum: [healthy, missing, invalid] }
+    WorkspaceHealth:
+      type: object
+      required: [status, connector, filesystem, executor, checkedAt]
+      properties:
+        status: { type: string, enum: [healthy, degraded, unavailable] }
+        connector: { type: string, enum: [online, degraded, offline] }
+        filesystem: { type: string, enum: [healthy, unreadable, unwritable, missing] }
+        executor: { type: string, enum: [available, unavailable, incompatible] }
+        checkedAt: { type: string, format: date-time }
+        issues:
+          type: array
+          items: { type: string }
+    RegisterSkillRequest:
+      type: object
+      required: [name, description, sourceType, sourceReference, version]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, minLength: 1, maxLength: 1000 }
+        sourceType: { type: string, enum: [openai_skill_id, source_reference] }
+        sourceReference: { type: string, minLength: 1 }
+        version: { type: string, minLength: 1, maxLength: 80 }
+        capabilityDirectories:
+          type: array
+          items: { type: string }
+    Skill:
+      allOf:
+        - $ref: "#/components/schemas/RegisterSkillRequest"
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string, format: uuid }
+            status: { $ref: "#/components/schemas/CapabilityStatus" }
+            validationSummary: { type: [string, "null"] }
+            validatedAt: { type: [string, "null"], format: date-time }
+    RegisterMcpRequest:
+      type: object
+      required: [label, serverUrl, allowedTools, required]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 80 }
+        serverUrl: { type: string, format: uri }
+        transportType: { const: http, default: http }
+        connectionOrigin: { const: environment, default: environment }
+        allowedTools:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string }
+        required: { type: boolean, default: true }
+        credentialSecretId: { type: [string, "null"], format: uuid }
+    McpServer:
+      allOf:
+        - $ref: "#/components/schemas/RegisterMcpRequest"
+        - type: object
+          required: [id, status, credentialHealth]
+          properties:
+            id: { type: string, format: uuid }
+            status: { $ref: "#/components/schemas/CapabilityStatus" }
+            credentialHealth: { type: string, enum: [not_required, healthy, missing, invalid] }
+            validationSummary: { type: [string, "null"] }
+            validatedAt: { type: [string, "null"], format: date-time }
+    CapabilityAttachment:
+      type: object
+      required: [type, capabilityId, required]
+      properties:
+        type: { type: string, enum: [skill, mcp_server] }
+        capabilityId: { type: string, format: uuid }
+        required: { type: boolean }
+    CreateAgentRequest:
+      type: object
+      required: [name, description, model, instructions, approvalMode, capabilities]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, minLength: 1, maxLength: 1000 }
+        model: { type: string, minLength: 1 }
+        instructions: { type: string, minLength: 1 }
+        approvalMode: { const: always_allow }
+        capabilities:
+          type: array
+          minItems: 2
+          items: { $ref: "#/components/schemas/CapabilityAttachment" }
+    Agent:
+      type: object
+      required: [id, name, description, status, draftVersion, capabilities]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [draft, published] }
+        openaiAgentId: { type: [string, "null"] }
+        draftVersion: { type: integer, minimum: 1 }
+        publishedVersion: { type: [integer, "null"], minimum: 1 }
+        approvalMode: { const: always_allow }
+        capabilities:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityAttachment" }
+        errors:
+          type: array
+          items: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+    Session:
+      type: object
+      required: [id, agentId, agentVersionId, status, executorStatus, input, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentVersionId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/SessionStatus" }
+        executorStatus:
+          type: string
+          enum: [not_requested, requested, connecting, connected, stopped, failed]
+        input: { type: string }
+        snapshotSummary: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: [string, "null"], format: date-time }
+        terminalAt: { type: [string, "null"], format: date-time }
+        failureSummary: { type: [string, "null"] }
+    TraceEvent:
+      type: object
+      required: [id, sessionId, sequence, category, type, summary, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        category: { type: string, enum: [lifecycle, output, tool, artifact, error] }
+        type: { type: string }
+        actorType: { type: string, enum: [user, agent, mcp, environment, system] }
+        actorId: { type: [string, "null"] }
+        summary: { type: string }
+        metadata: { type: object, additionalProperties: true }
+        occurredAt: { type: string, format: date-time }
+    Artifact:
+      type: object
+      required: [id, sessionId, reportSequence, name, workspaceRelativePath, status, reportedAt]
+      properties:
+        id: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        reportSequence: { type: integer, minimum: 1 }
+        name: { type: string }
+        type: { const: markdown }
+        workspaceRelativePath: { type: string }
+        status: { type: string, enum: [valid, missing, unreadable, outside_workspace, invalid_type] }
+        reportedAt: { type: string, format: date-time }
+        validatedAt: { type: [string, "null"], format: date-time }
+    AuditEntry:
+      type: object
+      required: [id, actorId, action, entityType, entityId, outcome, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorId: { type: string, format: uuid }
+        action: { type: string }
+        entityType: { type: string }
+        entityId: { type: string, format: uuid }
+        outcome: { type: string, enum: [succeeded, failed] }
+        metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    LiveFleetItem:
+      type: object
+      required: [sessionId, agentId, agentName, status, skillCount, mcpCount, lastEventAt]
+      properties:
+        sessionId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        status: { type: string, enum: [creating, provisioning, running] }
+        skillCount: { type: integer, minimum: 0 }
+        mcpCount: { type: integer, minimum: 0 }
+        lastSummary: { type: [string, "null"] }
+        lastEventAt: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status, detail, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string, format: uuid }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

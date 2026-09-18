@@ -1,0 +1,40 @@
+{
+  "name": "adlc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @adlc/api --filter @adlc/web --filter @adlc/workspace-connector dev",
+    "build": "pnpm -r build",
+    "ci": "pnpm format && pnpm lint && pnpm typecheck && pnpm test",
+    "db:generate": "pnpm --filter @adlc/database db:generate",
+    "db:migrate": "pnpm --filter @adlc/database db:migrate",
+    "lint": "eslint .",
+    "lint:openapi": "spectral lint specs/001-r0-agent-fleet-skeleton/contracts/openapi.yaml",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@playwright/test": "catalog:",
+    "@stoplight/spectral-cli": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "globals": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
+  }
+}

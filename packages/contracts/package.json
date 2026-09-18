@@ -1,0 +1,25 @@
+{
+  "name": "@adlc/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint:openapi": "spectral lint ../../specs/001-r0-agent-fleet-skeleton/contracts/openapi.yaml",
+    "test:schemas": "vitest run --project contracts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --project contracts"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

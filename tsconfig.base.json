@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "useDefineForClassFields": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@adlc/contracts": ["packages/contracts/src/index.ts"],
+      "@adlc/database": ["packages/database/src/index.ts"],
+      "@adlc/test-support": ["packages/test-support/src/index.ts"],
+      "@adlc/ui": ["packages/ui/src/index.ts"]
+    }
+  }
+}

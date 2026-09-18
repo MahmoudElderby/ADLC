@@ -17,6 +17,8 @@ dist/
 build/
 .next/
 .vite/
+test-results/
+playwright-report/
 
 # Python
 .venv/
@@ -28,4 +30,3 @@ __pycache__/
 Thumbs.db
 .idea/
 .vscode/
-
