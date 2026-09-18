@@ -39,11 +39,11 @@ jobs:
       ADLC_SESSION_ABSOLUTE_SECONDS: "86400"
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint:openapi
       - run: pnpm db:migrate
@@ -84,11 +84,11 @@ jobs:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
       - run: pnpm exec playwright install --with-deps chromium
