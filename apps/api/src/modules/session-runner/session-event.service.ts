@@ -75,6 +75,7 @@ export class SessionEventService {
     this.raw.set(rawKey, raw);
     this.normalized.set(sessionId, [...(this.normalized.get(sessionId) ?? []), normalized]);
     this.applyStateTransition(sessionId, input.type, redactedPayload);
+    this.sessionService.updateLiveFleet(sessionId, normalized.summary);
     this.subjectFor(sessionId).next(normalized);
     return { raw, normalized };
   }

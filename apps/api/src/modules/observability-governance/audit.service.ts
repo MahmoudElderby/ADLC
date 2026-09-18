@@ -34,4 +34,8 @@ export class AuditService {
   ): Promise<AuditRecord[]> {
     return this.auditRepository.listByEntity(workspaceId, entityType, entityId);
   }
+
+  async list(workspaceId: string, entityType?: string, entityId?: string): Promise<AuditRecord[]> {
+    return this.auditRepository.listByWorkspace(workspaceId, entityType, entityId);
+  }
 }

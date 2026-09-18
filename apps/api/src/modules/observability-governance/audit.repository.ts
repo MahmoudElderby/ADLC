@@ -41,4 +41,9 @@ export class AuditRepository {
         record.entityId === entityId,
     );
   }
+
+  async listByWorkspace(workspaceId: string, entityType?: string, entityId?: string): Promise<AuditRecord[]> {
+    return this.records.filter((record) => record.workspaceId === workspaceId &&
+      (!entityType || record.entityType === entityType) && (!entityId || record.entityId === entityId));
+  }
 }

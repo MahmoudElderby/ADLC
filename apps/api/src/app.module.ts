@@ -5,6 +5,7 @@ import { CapabilityRegistryModule } from "./modules/capability-registry/capabili
 import { SessionRunnerModule } from "./modules/session-runner/session-runner.module.js";
 import { WorkspaceEnvironmentModule } from "./modules/workspace-environment/workspace-environment.module.js";
 import { WorkspaceUserGuard } from "./platform/auth/workspace-user.guard.js";
+import { CommandCenterModule } from "./modules/command-center/command-center.module.js";
 
 @Controller("health")
 class HealthController {
@@ -23,6 +24,7 @@ class HealthController {
     AgentRegistryModule,
     WorkspaceEnvironmentModule,
     SessionRunnerModule,
+    CommandCenterModule,
   ],
   controllers: [HealthController],
   providers: [

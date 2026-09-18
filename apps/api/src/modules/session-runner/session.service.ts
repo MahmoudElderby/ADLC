@@ -14,6 +14,7 @@ const now = () => new Date().toISOString();
 export class SessionService {
   private readonly sessions = new Map<string, Session & { workspaceId: string }>();
   private readonly runtimeSecrets = new Map<string, string>();
+  private liveFleetProjector?: { sync: (session: Session & { workspaceId: string }) => void; update?: (sessionId: string, summary: string) => void };
 
   constructor(
     public readonly agentRegistryService: AgentRegistryService,
@@ -75,6 +76,7 @@ export class SessionService {
     };
 
     this.sessions.set(session.id, session);
+    this.liveFleetProjector?.sync(session);
     this.runtimeSecrets.set(session.id, openaiSession.remoteUrl);
     void this.auditService.record({
       workspaceId,
@@ -140,6 +142,7 @@ export class SessionService {
       failureSummary: failureSummary ?? session.failureSummary,
     };
     this.sessions.set(sessionId, updated);
+    this.liveFleetProjector?.sync(updated);
     void this.auditService.record({
       workspaceId,
       actorId,
@@ -151,6 +154,22 @@ export class SessionService {
       metadata: { previous: session.status, current: status },
     });
     return updated;
+  }
+
+  setLiveFleetProjector(projector: { sync: (session: Session & { workspaceId: string }) => void; update?: (sessionId: string, summary: string) => void }): void {
+    this.liveFleetProjector = projector;
+    for (const session of this.sessions.values()) projector.sync(session);
+  }
+
+  syncLiveFleet(summary?: string): void {
+    if (!this.liveFleetProjector) return;
+    for (const session of this.sessions.values()) {
+      this.liveFleetProjector.sync(summary ? { ...session, failureSummary: summary } : session);
+    }
+  }
+
+  updateLiveFleet(sessionId: string, summary: string): void {
+    this.liveFleetProjector?.update?.(sessionId, summary);
   }
 
   getRuntimeSecret(sessionId: string): string | undefined {

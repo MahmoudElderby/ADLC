@@ -28,6 +28,6 @@ import { SessionStreamController } from "./session-stream.controller.js";
     AuditService,
     RedactionService,
   ],
-  exports: [SessionService, SessionEventService, SessionStreamService, ArtifactService],
+  exports: [SessionService, SessionEventService, SessionStreamService, ArtifactService, AuditService],
 })
 export class SessionRunnerModule {}

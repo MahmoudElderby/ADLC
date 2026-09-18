@@ -98,5 +98,6 @@ export async function createReadyAgentFixture(options: { publish?: boolean } = {
     events,
     stream,
     artifacts,
+    audit,
   };
 }

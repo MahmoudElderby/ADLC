@@ -381,6 +381,38 @@ paths:
                   $ref: "#/components/schemas/TraceEvent"
         "404":
           $ref: "#/components/responses/NotFound"
+  /sessions/history:
+    get:
+      operationId: listSessionHistory
+      summary: List retained session history for investigation
+      tags: [Evidence]
+      responses:
+        "200":
+          description: Retained active and terminal sessions with stable navigation links.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionHistoryItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /sessions/{sessionId}/investigation:
+    get:
+      operationId: getSessionInvestigation
+      summary: Get ordered trace and retained session evidence
+      tags: [Evidence]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session detail, ordered trace, redacted snapshot, artifacts, and audits.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInvestigation"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /sessions/{sessionId}/artifacts:
     get:
       operationId: listSessionArtifacts
@@ -681,6 +713,46 @@ components:
         mcpCount: { type: integer, minimum: 0 }
         lastSummary: { type: [string, "null"] }
         lastEventAt: { type: string, format: date-time }
+        links:
+          type: object
+          required: [session, agent]
+          properties:
+            session: { type: string }
+            agent: { type: string }
+    SessionHistoryItem:
+      type: object
+      required: [sessionId, agentId, agentName, status, createdAt, terminalAt, links]
+      properties:
+        sessionId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        status: { $ref: "#/components/schemas/SessionStatus" }
+        createdAt: { type: string, format: date-time }
+        terminalAt: { type: [string, "null"], format: date-time }
+        failureSummary: { type: [string, "null"] }
+        links:
+          type: object
+          required: [session, agent]
+          properties:
+            session: { type: string }
+            agent: { type: string }
+    SessionInvestigation:
+      type: object
+      required: [session, trace, artifacts, snapshot, audits]
+      properties:
+        session: { $ref: "#/components/schemas/Session" }
+        trace:
+          type: array
+          items: { $ref: "#/components/schemas/TraceEvent" }
+        artifacts:
+          type: array
+          items: { $ref: "#/components/schemas/Artifact" }
+        snapshot:
+          type: object
+          additionalProperties: true
+        audits:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
     Problem:
       type: object
       required: [type, title, status, detail, correlationId]

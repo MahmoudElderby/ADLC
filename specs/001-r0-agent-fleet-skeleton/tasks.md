@@ -144,23 +144,23 @@
 
 > Write these tests first and verify each fails for the intended missing behavior.
 
-- [ ] T067 [P] [US3] Add contract tests for live-fleet dashboard, session history/detail/trace/artifacts, and filtered audit responses with secret canaries and stable navigation identifiers in `apps/api/test/contract/command-center-observability.contract.test.ts`
-- [ ] T068 [P] [US3] Add integration tests proving the live projection contains only nonterminal sessions, updates within the same transaction as state changes, removes all four terminal outcomes, and preserves historical navigation in `apps/api/test/integration/live-fleet-projection.test.ts`
-- [ ] T069 [P] [US3] Add integration tests for ordered trace reconstruction, tool/error/artifact links, immutable schema-versioned redacted snapshots, attributable audits, and retained partial evidence after interruption in `apps/api/test/integration/session-investigation.test.ts`
-- [ ] T070 [P] [US3] Add a Playwright journey from Command Center to session, agent, trace, artifact, snapshot, and audit evidence, including terminal removal and history discovery in `tests/e2e/monitor-and-investigate-session.spec.ts`
+- [X] T067 [P] [US3] Add contract tests for live-fleet dashboard, session history/detail/trace/artifacts, and filtered audit responses with secret canaries and stable navigation identifiers in `apps/api/test/contract/command-center-observability.contract.test.ts`
+- [X] T068 [P] [US3] Add integration tests proving the live projection contains only nonterminal sessions, updates within the same transaction as state changes, removes all four terminal outcomes, and preserves historical navigation in `apps/api/test/integration/live-fleet-projection.test.ts`
+- [X] T069 [P] [US3] Add integration tests for ordered trace reconstruction, tool/error/artifact links, immutable schema-versioned redacted snapshots, attributable audits, and retained partial evidence after interruption in `apps/api/test/integration/session-investigation.test.ts`
+- [X] T070 [P] [US3] Add a Playwright journey from Command Center to session, agent, trace, artifact, snapshot, and audit evidence, including terminal removal and history discovery in `tests/e2e/monitor-and-investigate-session.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T071 [P] [US3] Define live-fleet, session-history, trace, snapshot, and audit query/response schemas in `packages/contracts/src/command-center.ts` and `packages/contracts/src/observability.ts`
-- [ ] T072 [P] [US3] Add the `live_fleet_sessions` projection table constrained to nonterminal sessions and indexes for workspace/status/session history queries in `packages/database/src/schema/command-center.ts`
-- [ ] T073 [US3] Generate live-fleet projection and investigation-query indexes in `packages/database/drizzle/0005_command_center.sql`
-- [ ] T074 [US3] Implement transactional live-fleet projection updates from session creation and state transitions, removing rows for completed, failed, canceled, and interrupted sessions in `apps/api/src/modules/command-center/live-fleet-projector.ts`
-- [ ] T075 [US3] Implement dashboard and session-history queries with agent status, capability indicators, blocker/failure summaries, and stable links to retained records in `apps/api/src/modules/command-center/command-center.service.ts`
-- [ ] T076 [US3] Implement trace assembly over normalized events with ordered state, output, tool, error, artifact, and timestamp evidence plus immutable snapshot retrieval in `apps/api/src/modules/observability-governance/trace.service.ts`
-- [ ] T077 [US3] Implement live-fleet dashboard, session trace, and audit-log endpoints from `contracts/openapi.yaml` in `apps/api/src/modules/command-center/command-center.controller.ts` and `apps/api/src/modules/observability-governance/observability.controller.ts`
-- [ ] T078 [P] [US3] Build the React Flow Command Center live canvas with active-agent nodes, current status, capability indicators, blocked/failed treatment, stable dimensions, and navigation to session detail in `apps/web/src/features/command-center/CommandCenterPage.tsx` and `apps/web/src/features/command-center/LiveFleetCanvas.tsx`
-- [ ] T079 [P] [US3] Build searchable session history with distinct terminal outcomes and links back to agent and session evidence in `apps/web/src/features/sessions/SessionHistoryPage.tsx`
-- [ ] T080 [US3] Add trace, redacted snapshot, artifacts, and audit tabs with ordered events and cross-navigation to the session detail view in `apps/web/src/features/sessions/SessionInvestigationTabs.tsx` and `apps/web/src/features/sessions/TraceTimeline.tsx`
+- [X] T071 [P] [US3] Define live-fleet, session-history, trace, snapshot, and audit query/response schemas in `packages/contracts/src/command-center.ts` and `packages/contracts/src/observability.ts`
+- [X] T072 [P] [US3] Add the `live_fleet_sessions` projection table constrained to nonterminal sessions and indexes for workspace/status/session history queries in `packages/database/src/schema/command-center.ts`
+- [X] T073 [US3] Generate live-fleet projection and investigation-query indexes in `packages/database/drizzle/0005_command_center.sql`
+- [X] T074 [US3] Implement transactional live-fleet projection updates from session creation and state transitions, removing rows for completed, failed, canceled, and interrupted sessions in `apps/api/src/modules/command-center/live-fleet-projector.ts`
+- [X] T075 [US3] Implement dashboard and session-history queries with agent status, capability indicators, blocker/failure summaries, and stable links to retained records in `apps/api/src/modules/command-center/command-center.service.ts`
+- [X] T076 [US3] Implement trace assembly over normalized events with ordered state, output, tool, error, artifact, and timestamp evidence plus immutable snapshot retrieval in `apps/api/src/modules/observability-governance/trace.service.ts`
+- [X] T077 [US3] Implement live-fleet dashboard, session trace, and audit-log endpoints from `contracts/openapi.yaml` in `apps/api/src/modules/command-center/command-center.controller.ts` and `apps/api/src/modules/observability-governance/observability.controller.ts`
+- [X] T078 [P] [US3] Build the React Flow Command Center live canvas with active-agent nodes, current status, capability indicators, blocked/failed treatment, stable dimensions, and navigation to session detail in `apps/web/src/features/command-center/CommandCenterPage.tsx` and `apps/web/src/features/command-center/LiveFleetCanvas.tsx`
+- [X] T079 [P] [US3] Build searchable session history with distinct terminal outcomes and links back to agent and session evidence in `apps/web/src/features/sessions/SessionHistoryPage.tsx`
+- [X] T080 [US3] Add trace, redacted snapshot, artifacts, and audit tabs with ordered events and cross-navigation to the session detail view in `apps/web/src/features/sessions/SessionInvestigationTabs.tsx` and `apps/web/src/features/sessions/TraceTimeline.tsx`
 
 **Checkpoint**: All three user stories are independently testable and together form the complete R0 walking skeleton.
 
