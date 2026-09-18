@@ -170,14 +170,14 @@
 
 **Purpose**: Verify product-level security, resilience, usability, performance, and operational documentation across the complete slice.
 
-- [ ] T081 [P] Add a repository secret-canary acceptance test covering every browser-visible API, SSE event, trace, artifact, snapshot, validation error, and audit payload in `tests/e2e/secret-redaction.spec.ts`
-- [ ] T082 [P] Add accessibility checks for keyboard navigation, focus order, labels, status announcements, and contrast across the golden path in `tests/e2e/accessibility.spec.ts`
-- [ ] T083 Add load and timing assertions for 95% status visibility within 2 seconds and artifact visibility within 5 seconds using representative event volume in `apps/api/test/integration/observability-performance.test.ts`
-- [ ] T084 Add resilience tests for connector loss during execution, missing terminal events becoming interrupted, SSE disconnect/replay, duplicate command results, and retained partial evidence in `apps/api/test/integration/session-resilience.test.ts`
-- [ ] T085 [P] Add an opt-in live OpenAI plus VPN-reachable MCP smoke test that creates one Markdown artifact without storing credentials or creating approval requests in `tests/smoke/live-openai-mcp.test.ts`
-- [ ] T086 Harden production headers, CORS, body limits, rate limits, log redaction, and connector request timeouts in `apps/api/src/platform/security/http-hardening.ts` and `apps/workspace-connector/src/security/network-policy.ts`
-- [ ] T087 Update the operator quickstart with exact setup, migration, connector, validation, test, golden-path, failure-path, and cleanup commands verified against the built applications in `specs/001-r0-agent-fleet-skeleton/quickstart.md`
-- [ ] T088 Run and record the final lint, typecheck, unit, integration, contract, Playwright, migration, OpenAPI, and optional live-smoke results in `specs/001-r0-agent-fleet-skeleton/verification.md`
+- [X] T081 [P] Add a repository secret-canary acceptance test covering every browser-visible API, SSE event, trace, artifact, snapshot, validation error, and audit payload in `tests/e2e/secret-redaction.spec.ts`
+- [X] T082 [P] Add accessibility checks for keyboard navigation, focus order, labels, status announcements, and contrast across the golden path in `tests/e2e/accessibility.spec.ts`
+- [X] T083 Add load and timing assertions for 95% status visibility within 2 seconds and artifact visibility within 5 seconds using representative event volume in `apps/api/test/integration/observability-performance.test.ts`
+- [X] T084 Add resilience tests for connector loss during execution, missing terminal events becoming interrupted, SSE disconnect/replay, duplicate command results, and retained partial evidence in `apps/api/test/integration/session-resilience.test.ts`
+- [X] T085 [P] Add an opt-in live OpenAI plus VPN-reachable MCP smoke test that creates one Markdown artifact without storing credentials or creating approval requests in `tests/smoke/live-openai-mcp.test.ts`
+- [X] T086 Harden production headers, CORS, body limits, rate limits, log redaction, and connector request timeouts in `apps/api/src/platform/security/http-hardening.ts` and `apps/workspace-connector/src/security/network-policy.ts`
+- [X] T087 Update the operator quickstart with exact setup, migration, connector, validation, test, golden-path, failure-path, and cleanup commands verified against the built applications in `specs/001-r0-agent-fleet-skeleton/quickstart.md`
+- [X] T088 Run and record the final lint, typecheck, unit, integration, contract, Playwright, migration, OpenAPI, and optional live-smoke results in `specs/001-r0-agent-fleet-skeleton/verification.md`
 
 ---
 

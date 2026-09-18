@@ -24,6 +24,17 @@ pnpm db:migrate
 pnpm dev
 ```
 
+For a fresh checkout, run the local validation commands before starting the stack:
+
+```powershell
+corepack enable
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm lint:openapi
+```
+
 Expected services:
 
 - Web UI on the configured Vite development URL
@@ -48,6 +59,8 @@ Then run:
 pnpm --filter @adlc/workspace-connector start
 ```
 
+The connector requires HTTPS for a non-local control-plane URL, a token of at least 24 characters, and a pre-approved workspace path. API requests and connector polling use bounded timeouts.
+
 In Workspace Environment, confirm:
 
 - connector status is online
@@ -71,6 +84,8 @@ The normal suite uses OpenAI and MCP fakes. To run the opt-in live contract smok
 ```powershell
 pnpm test:smoke:openai
 ```
+
+The live smoke test is opt-in and requires `ADLC_LIVE_SMOKE=1`, `OPENAI_API_KEY`, `ADLC_MCP_URL`, and `ADLC_SMOKE_ARTIFACT_PATH` ending in `.md`. It is never part of the default test suite.
 
 ## Validate the Golden Path
 
@@ -125,3 +140,13 @@ Seed fake API keys and MCP tokens into upstream error payloads. Contract and int
 - Session stream: [contracts/sse-events.md](./contracts/sse-events.md)
 - Workspace connector: [contracts/connector-protocol.md](./contracts/connector-protocol.md)
 - Persistence and state transitions: [data-model.md](./data-model.md)
+
+## Cleanup
+
+Stop development processes with `Ctrl+C`, then remove only the local PostgreSQL service and its named volume when the validation data is disposable:
+
+```powershell
+docker compose down -v
+```
+
+To rerun migrations against a clean database, start PostgreSQL again and run `pnpm db:migrate`. Do not use this cleanup command against a shared or production Compose project.

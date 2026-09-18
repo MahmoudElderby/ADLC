@@ -60,4 +60,12 @@ export default defineWorkspace([
       include: ["packages/ui/test/**/*.test.ts"],
     },
   },
+  {
+    ...sharedVitestConfig,
+    test: {
+      ...sharedVitestConfig.test,
+      name: "smoke",
+      include: ["tests/smoke/**/*.test.ts"],
+    },
+  },
 ]);

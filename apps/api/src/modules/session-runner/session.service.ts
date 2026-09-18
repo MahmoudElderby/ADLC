@@ -14,7 +14,10 @@ const now = () => new Date().toISOString();
 export class SessionService {
   private readonly sessions = new Map<string, Session & { workspaceId: string }>();
   private readonly runtimeSecrets = new Map<string, string>();
-  private liveFleetProjector?: { sync: (session: Session & { workspaceId: string }) => void; update?: (sessionId: string, summary: string) => void };
+  private liveFleetProjector?: {
+    sync: (session: Session & { workspaceId: string }) => void;
+    update?: (sessionId: string, summary: string) => void;
+  };
 
   constructor(
     public readonly agentRegistryService: AgentRegistryService,
@@ -156,7 +159,10 @@ export class SessionService {
     return updated;
   }
 
-  setLiveFleetProjector(projector: { sync: (session: Session & { workspaceId: string }) => void; update?: (sessionId: string, summary: string) => void }): void {
+  setLiveFleetProjector(projector: {
+    sync: (session: Session & { workspaceId: string }) => void;
+    update?: (sessionId: string, summary: string) => void;
+  }): void {
     this.liveFleetProjector = projector;
     for (const session of this.sessions.values()) projector.sync(session);
   }

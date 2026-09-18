@@ -14,12 +14,20 @@ import { apiFetch } from "../lib/api.js";
 
 function SessionInvestigationPage() {
   const { sessionId = "" } = useParams();
-  const investigation = useQuery({ queryKey: ["session-investigation", sessionId], queryFn: () => apiFetch(`/sessions/${sessionId}/investigation`, sessionInvestigationSchema), enabled: Boolean(sessionId) });
-  return <main><h1>Session Investigation</h1><Link to="/sessions/history">Session history</Link>
-    {investigation.isPending && <p role="status">Loading session evidence</p>}
-    {investigation.isError && <p role="alert">Unable to load session evidence.</p>}
-    {investigation.data && <SessionInvestigationTabs investigation={investigation.data} />}
-  </main>;
+  const investigation = useQuery({
+    queryKey: ["session-investigation", sessionId],
+    queryFn: () => apiFetch(`/sessions/${sessionId}/investigation`, sessionInvestigationSchema),
+    enabled: Boolean(sessionId),
+  });
+  return (
+    <main>
+      <h1>Session Investigation</h1>
+      <Link to="/sessions/history">Session history</Link>
+      {investigation.isPending && <p role="status">Loading session evidence</p>}
+      {investigation.isError && <p role="alert">Unable to load session evidence.</p>}
+      {investigation.data && <SessionInvestigationTabs investigation={investigation.data} />}
+    </main>
+  );
 }
 
 export const router = createBrowserRouter([

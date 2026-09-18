@@ -2,7 +2,10 @@ import { z } from "zod";
 import { dateTimeSchema, uuidSchema } from "./common.js";
 import { sessionStatusSchema, terminalSessionStatusSchema } from "./sessions.js";
 
-export const navigationLinksSchema = z.object({ session: z.string().min(1), agent: z.string().min(1) });
+export const navigationLinksSchema = z.object({
+  session: z.string().min(1),
+  agent: z.string().min(1),
+});
 export const liveFleetItemSchema = z.object({
   sessionId: uuidSchema,
   agentId: uuidSchema,

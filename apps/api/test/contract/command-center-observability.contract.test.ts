@@ -31,22 +31,72 @@ describe("Command Center and observability contracts", () => {
   });
 
   it("validates history, investigation evidence, and never requires secret values", () => {
-    const historyPayload = [{
-      sessionId: id,
-      agentId: id,
-      agentName: "Release planner",
-      status: "interrupted",
-      createdAt: timestamp,
-      terminalAt: timestamp,
-      failureSummary: "Executor disconnected",
-      links: { session: `/sessions/${id}`, agent: `/agents/${id}` },
-    }];
+    const historyPayload = [
+      {
+        sessionId: id,
+        agentId: id,
+        agentName: "Release planner",
+        status: "interrupted",
+        createdAt: timestamp,
+        terminalAt: timestamp,
+        failureSummary: "Executor disconnected",
+        links: { session: `/sessions/${id}`, agent: `/agents/${id}` },
+      },
+    ];
     const history = sessionHistoryItemSchema.parse(historyPayload[0]);
     expect(sessionHistoryResponseSchema.parse(historyPayload)).toHaveLength(1);
-    expect(liveFleetResponseSchema.parse([{ sessionId: id, agentId: id, agentName: "Release planner", status: "running", skillCount: 1, mcpCount: 1, lastSummary: null, lastEventAt: timestamp, links: { session: `/sessions/${id}`, agent: `/agents/${id}` } }])).toHaveLength(1);
-    const artifact = artifactSchema.parse({ id, sessionId: id, reportSequence: 1, name: "report.md", type: "markdown", workspaceRelativePath: "artifacts/report.md", status: "valid", reportedAt: timestamp, validatedAt: timestamp });
-    const trace = traceResponseSchema.parse([{ id, sessionId: id, sequence: 1, category: "output", type: "session.output.delta", actorType: "agent", actorId: id, summary: "Redacted output", metadata: { token: "[REDACTED]" }, occurredAt: timestamp }]);
-    const audits = auditResponseSchema.parse([{ id, actorId: id, action: "session.started", entityType: "session", entityId: id, outcome: "succeeded", metadata: { token: "[REDACTED]" }, createdAt: timestamp }]);
+    expect(
+      liveFleetResponseSchema.parse([
+        {
+          sessionId: id,
+          agentId: id,
+          agentName: "Release planner",
+          status: "running",
+          skillCount: 1,
+          mcpCount: 1,
+          lastSummary: null,
+          lastEventAt: timestamp,
+          links: { session: `/sessions/${id}`, agent: `/agents/${id}` },
+        },
+      ]),
+    ).toHaveLength(1);
+    const artifact = artifactSchema.parse({
+      id,
+      sessionId: id,
+      reportSequence: 1,
+      name: "report.md",
+      type: "markdown",
+      workspaceRelativePath: "artifacts/report.md",
+      status: "valid",
+      reportedAt: timestamp,
+      validatedAt: timestamp,
+    });
+    const trace = traceResponseSchema.parse([
+      {
+        id,
+        sessionId: id,
+        sequence: 1,
+        category: "output",
+        type: "session.output.delta",
+        actorType: "agent",
+        actorId: id,
+        summary: "Redacted output",
+        metadata: { token: "[REDACTED]" },
+        occurredAt: timestamp,
+      },
+    ]);
+    const audits = auditResponseSchema.parse([
+      {
+        id,
+        actorId: id,
+        action: "session.started",
+        entityType: "session",
+        entityId: id,
+        outcome: "succeeded",
+        metadata: { token: "[REDACTED]" },
+        createdAt: timestamp,
+      },
+    ]);
     const investigation = sessionInvestigationSchema.parse({
       session: { id, status: "interrupted" },
       trace,

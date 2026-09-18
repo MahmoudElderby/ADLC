@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { artifactSchema, normalizedSessionEventSchema, redactedSnapshotSchema, sessionSchema } from "./sessions.js";
+import {
+  artifactSchema,
+  normalizedSessionEventSchema,
+  redactedSnapshotSchema,
+  sessionSchema,
+} from "./sessions.js";
 import { uuidSchema, dateTimeSchema, auditOutcomeSchema } from "./common.js";
 
 export const auditEntrySchema = z.object({

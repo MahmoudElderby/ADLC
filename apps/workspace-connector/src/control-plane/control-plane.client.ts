@@ -2,6 +2,12 @@ import {
   connectorAuthorizationHeader,
   type CommandEnvelope,
 } from "../security/control-plane-auth.js";
+import {
+  assertAllowedControlPlaneUrl,
+  boundedTimeoutMs,
+  connectorTimeouts,
+  withTimeout,
+} from "../security/network-policy.js";
 
 export type CommandResult = {
   status: "succeeded" | "failed";
@@ -18,13 +24,20 @@ export type ConnectorClientOptions = {
 };
 
 export class ConnectorControlPlaneClient {
-  constructor(private readonly options: ConnectorClientOptions) {}
+  constructor(private readonly options: ConnectorClientOptions) {
+    assertAllowedControlPlaneUrl(options.apiUrl);
+  }
 
   authorizationHeader(): string {
     return connectorAuthorizationHeader(this.options.token);
   }
 
   async heartbeat() {
+    await withTimeout(
+      Promise.resolve(),
+      connectorTimeouts.heartbeatMs,
+      "Connector heartbeat timed out.",
+    );
     return {
       connectorVersion: "0.1.0",
       observedAt: new Date().toISOString(),
@@ -32,7 +45,7 @@ export class ConnectorControlPlaneClient {
   }
 
   async nextCommand(waitSeconds = 25): Promise<CommandEnvelope | null> {
-    void waitSeconds;
+    boundedTimeoutMs(waitSeconds * 1_000, connectorTimeouts.longPollMs);
     return null;
   }
 

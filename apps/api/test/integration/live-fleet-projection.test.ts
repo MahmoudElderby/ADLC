@@ -8,7 +8,13 @@ describe("live fleet projection", () => {
     const fixture = await createReadyAgentFixture();
     const projector = new LiveFleetProjector(fixture.sessions);
     fixture.sessions.setLiveFleetProjector(projector);
-    const commandCenter = new CommandCenterService(fixture.sessions, fixture.events, fixture.artifacts, fixture.audit, projector);
+    const commandCenter = new CommandCenterService(
+      fixture.sessions,
+      fixture.events,
+      fixture.artifacts,
+      fixture.audit,
+      projector,
+    );
     const sessions = await Promise.all(
       ["completed", "failed", "canceled", "interrupted"].map(() =>
         fixture.sessions.startSession(fixture.workspaceId, fixture.actorId, {
@@ -19,7 +25,14 @@ describe("live fleet projection", () => {
     );
 
     expect(commandCenter.getLiveFleet(fixture.workspaceId)).toHaveLength(4);
-    sessions.forEach((session, index) => fixture.sessions.transition(fixture.workspaceId, fixture.actorId, session.id, ["completed", "failed", "canceled", "interrupted"][index] as never));
+    sessions.forEach((session, index) =>
+      fixture.sessions.transition(
+        fixture.workspaceId,
+        fixture.actorId,
+        session.id,
+        ["completed", "failed", "canceled", "interrupted"][index] as never,
+      ),
+    );
     expect(commandCenter.getLiveFleet(fixture.workspaceId)).toEqual([]);
     expect(commandCenter.listHistory(fixture.workspaceId)).toHaveLength(4);
   });
