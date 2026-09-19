@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/playwright-report/**",
       "**/test-results/**",
       ".specify/",
+      "apps/Debate AI SDLC Command Center UI/",
     ],
   },
   js.configs.recommended,

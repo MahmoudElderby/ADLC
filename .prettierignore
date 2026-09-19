@@ -2,6 +2,7 @@
 .specify/
 docs/
 specs/
+apps/Debate AI SDLC Command Center UI/
 node_modules/
 **/dist/
 **/build/

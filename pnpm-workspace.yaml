@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "!apps/Debate AI SDLC Command Center UI"
 
 allowBuilds:
   "@scarf/scarf": false
