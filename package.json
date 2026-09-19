@@ -40,6 +40,7 @@
     "typescript-eslint": "catalog:",
     "@swc/core": "catalog:",
     "unplugin-swc": "catalog:",
+    "tsx": "catalog:",
     "vitest": "catalog:"
   },
   "pnpm": {

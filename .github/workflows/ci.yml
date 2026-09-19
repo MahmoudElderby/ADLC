@@ -91,5 +91,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
+      - run: mkdir -p /tmp/adlc-workspace
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm exec playwright test --project=cockpit-002

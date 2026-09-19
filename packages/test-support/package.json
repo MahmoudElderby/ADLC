@@ -21,6 +21,7 @@
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "pg": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
